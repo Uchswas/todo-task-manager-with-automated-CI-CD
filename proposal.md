@@ -43,7 +43,7 @@ Use Case: PR to dev triggers automated CI and deployment to the test environment
 
 ## The DevOps Pipeline
 
-![pipeline](https://github.ncsu.edu/upaul/csc519-project/assets/30366/6e2366ea-94b9-4a9e-9251-68364b5f01fa)
+![pipeline](https://github.ncsu.edu/aelgend/csc519-task-manager/blob/main/pipeline.svg)
 
 
 ##### Code Stage
