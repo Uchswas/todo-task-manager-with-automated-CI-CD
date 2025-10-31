@@ -1,11 +1,11 @@
 """Routes for user authentication and profile management."""
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify
 from flask_jwt_extended import create_access_token, jwt_required
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.exceptions import BadRequest
 
 from app.models import Category, User, db
+from app.routes.common import load_json_payload
 from app.utils.auth import (
     jwt_required_with_user,
     validate_email,
@@ -16,16 +16,60 @@ from app.utils.auth import (
 auth_bp = Blueprint('auth', __name__)
 
 
+def _handle_name_update(data, current_user):
+    """Validate and apply a name update if present."""
+    if 'name' not in data:
+        return None
+
+    # Update name if provided
+    name = data['name'].strip()
+    if len(name) < 2:
+        return jsonify({'error': 'Name must be at least 2 characters long'}), 400
+    if len(name) > 100:
+        return jsonify({'error': 'Name must be less than 100 characters'}), 400
+    current_user.name = name
+    return None
+
+
+def _handle_email_update(data, current_user):
+    """Validate the requested email change and return pending updates."""
+    if 'email' not in data:
+        return None, None, None
+
+    # Update email if provided
+    email = data['email'].lower().strip()
+
+    # Validate email format
+    if not validate_email(email):
+        return jsonify({'error': 'Invalid email format'}), 400, None
+
+    lookup_error = None
+    existing_user = None
+    try:
+        # Check if email already exists (excluding current user)
+        existing_user = (
+            User.query.filter_by(email=email)
+            .filter(User.id != current_user.id)
+            .first()
+        )
+    except SQLAlchemyError as exc:
+        lookup_error = exc
+
+    if lookup_error is not None:
+        return None, None, lookup_error
+
+    if existing_user:
+        return jsonify({'error': 'Email already registered'}), 400, None
+
+    return None, email, None
+
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     """Create a new user account and seed default categories."""
-    try:
-        data = request.get_json()
-    except BadRequest as error:
-        return jsonify({'error': 'Invalid JSON payload', 'details': str(error)}), 400
-
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    data, error_response = load_json_payload()
+    if error_response is not None:
+        return error_response
 
     # Validate input data
     errors = validate_user_registration(data)
@@ -78,13 +122,9 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """Authenticate a user and issue a JWT access token."""
-    try:
-        data = request.get_json()
-    except BadRequest as error:
-        return jsonify({'error': 'Invalid JSON payload', 'details': str(error)}), 400
-
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    data, error_response = load_json_payload()
+    if error_response is not None:
+        return error_response
 
     # Validate input data
     errors = validate_user_login(data)
@@ -123,46 +163,30 @@ def get_profile(current_user):
 @jwt_required_with_user
 def update_profile(current_user):
     """Update the authenticated user's profile details."""
-    try:
-        data = request.get_json()
-    except BadRequest as error:
-        return jsonify({'error': 'Invalid JSON payload', 'details': str(error)}), 400
+    data, error_response = load_json_payload()
+    if error_response is not None:
+        return error_response
 
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    error_response = None
 
-    if 'name' in data:
-        # Update name if provided
-        name = data['name'].strip()
-        if len(name) < 2:
-            return jsonify({'error': 'Name must be at least 2 characters long'}), 400
-        if len(name) > 100:
-            return jsonify({'error': 'Name must be less than 100 characters'}), 400
-        current_user.name = name
+    name_error = _handle_name_update(data, current_user)
 
-    if 'email' in data:
-        # Update email if provided
-        email = data['email'].lower().strip()
+    email_error, pending_email, lookup_error = _handle_email_update(data, current_user)
 
-        # Validate email format
-        if not validate_email(email):
-            return jsonify({'error': 'Invalid email format'}), 400
+    if lookup_error is not None:
+        current_app.logger.exception("Profile update lookup failed")
+        return jsonify({'error': 'Failed to update profile', 'details': str(lookup_error)}), 500
 
-        try:
-            # Check if email already exists (excluding current user)
-            existing_user = (
-                User.query.filter_by(email=email)
-                .filter(User.id != current_user.id)
-                .first()
-            )
-        except SQLAlchemyError as exc:
-            current_app.logger.exception("Profile update lookup failed")
-            return jsonify({'error': 'Failed to update profile', 'details': str(exc)}), 500
+    if name_error is not None:
+        error_response = name_error
+    if error_response is None and email_error is not None:
+        error_response = email_error
 
-        if existing_user:
-            return jsonify({'error': 'Email already registered'}), 400
+    if error_response is not None:
+        return error_response
 
-        current_user.email = email
+    if pending_email is not None:
+        current_user.email = pending_email
 
     try:
         db.session.commit()

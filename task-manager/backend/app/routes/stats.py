@@ -12,6 +12,156 @@ from app.utils.auth import jwt_required_with_user
 stats_bp = Blueprint('stats', __name__)
 
 
+def _basic_task_counts(user_id):
+    """Return aggregate totals for completed and pending tasks."""
+    # Basic task counts
+    total_tasks = Task.query.filter_by(user_id=user_id).count()
+    completed_tasks = Task.query.filter_by(user_id=user_id, is_completed=True).count()
+    pending_tasks = total_tasks - completed_tasks
+    return total_tasks, completed_tasks, pending_tasks
+
+
+def _deadline_counts(user_id, today):
+    """Return overdue, due-today, and due-this-week task counts."""
+    # Overdue tasks (incomplete tasks past due date)
+    overdue_tasks = Task.query.filter(
+        and_(
+            Task.user_id == user_id,
+            Task.due_date < today,
+            Task.is_completed.is_(False),
+        )
+    ).count()
+
+    # Tasks due today
+    due_today = Task.query.filter(
+        and_(
+            Task.user_id == user_id,
+            Task.due_date == today,
+            Task.is_completed.is_(False),
+        )
+    ).count()
+
+    # Tasks due this week
+    week_start = today
+    week_end = today + timedelta(days=7)
+    due_this_week = Task.query.filter(
+        and_(
+            Task.user_id == user_id,
+            Task.due_date >= week_start,
+            Task.due_date <= week_end,
+            Task.is_completed.is_(False),
+        )
+    ).count()
+
+    return overdue_tasks, due_today, due_this_week
+
+
+def _priority_breakdown(user_id):
+    """Return outstanding tasks bucketed by priority."""
+    # Priority breakdown
+    priority_stats = db.session.query(
+        Task.priority,
+        func.count(Task.id).label('count'),  # pylint: disable=not-callable
+    ).filter_by(user_id=user_id, is_completed=False).group_by(Task.priority).all()
+
+    breakdown = {
+        'low': 0,
+        'medium': 0,
+        'high': 0
+    }
+    for priority, count in priority_stats:
+        breakdown[priority] = count
+    return breakdown
+
+
+def _category_breakdown(user_id):
+    """Return category statistics including uncategorized tasks."""
+    # Category breakdown
+    category_stats = db.session.query(
+        Category.name,
+        Category.color,
+        func.count(Task.id).label('task_count'),  # pylint: disable=not-callable
+        func.sum(case((Task.is_completed.is_(True), 1), else_=0)).label('completed_count'),
+    ).outerjoin(
+        Task,
+        and_(Task.category_id == Category.id, Task.user_id == user_id)
+    ).filter(Category.user_id == user_id).group_by(
+        Category.id, Category.name, Category.color
+    ).all()
+
+    category_breakdown = []
+    for name, color, task_count, completed_count in category_stats:
+        category_breakdown.append({
+            'name': name,
+            'color': color,
+            'total_tasks': task_count or 0,
+            'completed_tasks': completed_count or 0,
+            'pending_tasks': (task_count or 0) - (completed_count or 0)
+        })
+
+    # Tasks without category
+    uncategorized_count = Task.query.filter_by(user_id=user_id, category_id=None).count()
+    uncategorized_completed = Task.query.filter_by(
+        user_id=user_id, category_id=None, is_completed=True
+    ).count()
+
+    if uncategorized_count > 0:
+        category_breakdown.append({
+            'name': 'Uncategorized',
+            'color': '#6B7280',
+            'total_tasks': uncategorized_count,
+            'completed_tasks': uncategorized_completed,
+            'pending_tasks': uncategorized_count - uncategorized_completed
+        })
+
+    return category_breakdown
+
+
+def _recent_activity(user_id, today):
+    """Return recent completion counts and weekly trend data."""
+    # Recent activity (tasks completed in last 7 days)
+    seven_days_ago = today - timedelta(days=7)
+    recent_completions = Task.query.filter(
+        and_(
+            Task.user_id == user_id,
+            Task.is_completed.is_(True),
+            Task.completed_at.isnot(None),
+            func.date(Task.completed_at) >= seven_days_ago,
+        )
+    ).count()
+
+    # Weekly completion trend (last 4 weeks including current week)
+    weekly_trend = []
+    for i in range(4):
+        if i == 0:
+            # Current week: from 7 days ago to today (inclusive)
+            week_start = today - timedelta(days=6)  # Last 7 days including today
+            week_end = today
+        else:
+            # Previous weeks
+            week_end = today - timedelta(days=i * 7)
+            week_start = week_end - timedelta(days=6)  # 7-day period
+
+        week_completions = Task.query.filter(
+            and_(
+                Task.user_id == user_id,
+                Task.is_completed.is_(True),
+                Task.completed_at.isnot(None),
+                func.date(Task.completed_at) >= week_start,
+                func.date(Task.completed_at) <= week_end,
+            )
+        ).count()
+
+        weekly_trend.insert(0, {
+            'week_start': week_start.isoformat(),
+            'week_end': week_end.isoformat(),
+            'completions': week_completions,
+            'is_current_week': (i == 0),
+        })
+
+    return recent_completions, weekly_trend
+
+
 @stats_bp.route('', methods=['GET'])
 @jwt_required_with_user
 def get_statistics(current_user):
@@ -21,134 +171,18 @@ def get_statistics(current_user):
         today = datetime.now().date()
 
         # Basic task counts
-        total_tasks = Task.query.filter_by(user_id=user_id).count()
-        completed_tasks = Task.query.filter_by(user_id=user_id, is_completed=True).count()
-        pending_tasks = total_tasks - completed_tasks
-
+        total_tasks, completed_tasks, pending_tasks = _basic_task_counts(user_id)
         # Overdue tasks (incomplete tasks past due date)
-        overdue_tasks = Task.query.filter(
-            and_(
-                Task.user_id == user_id,
-                Task.due_date < today,
-                Task.is_completed.is_(False),
-            )
-        ).count()
-
-        # Tasks due today
-        due_today = Task.query.filter(
-            and_(
-                Task.user_id == user_id,
-                Task.due_date == today,
-                Task.is_completed.is_(False),
-            )
-        ).count()
-
-        # Tasks due this week
-        week_start = today
-        week_end = today + timedelta(days=7)
-        due_this_week = Task.query.filter(
-            and_(
-                Task.user_id == user_id,
-                Task.due_date >= week_start,
-                Task.due_date <= week_end,
-                Task.is_completed.is_(False),
-            )
-        ).count()
-
+        overdue_tasks, due_today, due_this_week = _deadline_counts(user_id, today)
         # Priority breakdown
-        priority_stats = db.session.query(
-            Task.priority,
-            func.count(Task.id).label('count'),  # pylint: disable=not-callable
-        ).filter_by(user_id=user_id, is_completed=False).group_by(Task.priority).all()
-
-        priority_breakdown = {
-            'low': 0,
-            'medium': 0,
-            'high': 0
-        }
-        for priority, count in priority_stats:
-            priority_breakdown[priority] = count
-
+        priority_breakdown = _priority_breakdown(user_id)
         # Category breakdown
-        category_stats = db.session.query(
-            Category.name,
-            Category.color,
-            func.count(Task.id).label('task_count'),  # pylint: disable=not-callable
-            func.sum(case((Task.is_completed.is_(True), 1), else_=0)).label('completed_count'),
-        ).outerjoin(
-            Task,
-            and_(Task.category_id == Category.id, Task.user_id == user_id)
-        ).filter(Category.user_id == user_id).group_by(
-            Category.id, Category.name, Category.color
-        ).all()
-
-        category_breakdown = []
-        for name, color, task_count, completed_count in category_stats:
-            category_breakdown.append({
-                'name': name,
-                'color': color,
-                'total_tasks': task_count or 0,
-                'completed_tasks': completed_count or 0,
-                'pending_tasks': (task_count or 0) - (completed_count or 0)
-            })
-
-        # Tasks without category
-        uncategorized_count = Task.query.filter_by(user_id=user_id, category_id=None).count()
-        uncategorized_completed = Task.query.filter_by(
-            user_id=user_id, category_id=None, is_completed=True
-        ).count()
-
-        if uncategorized_count > 0:
-            category_breakdown.append({
-                'name': 'Uncategorized',
-                'color': '#6B7280',
-                'total_tasks': uncategorized_count,
-                'completed_tasks': uncategorized_completed,
-                'pending_tasks': uncategorized_count - uncategorized_completed
-            })
-
+        category_breakdown = _category_breakdown(user_id)
         # Completion rate
         completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
 
         # Recent activity (tasks completed in last 7 days)
-        seven_days_ago = datetime.now().date() - timedelta(days=7)
-        recent_completions = Task.query.filter(
-            and_(
-                Task.user_id == user_id,
-                Task.is_completed.is_(True),
-                Task.completed_at.isnot(None),
-                func.date(Task.completed_at) >= seven_days_ago,
-            )
-        ).count()
-
-        # Weekly completion trend (last 4 weeks including current week)
-        weekly_trend = []
-        for i in range(4):
-            if i == 0:
-                # Current week: from 7 days ago to today (inclusive)
-                week_start = today - timedelta(days=6)  # Last 7 days including today
-                week_end = today
-            else:
-                # Previous weeks
-                week_end = today - timedelta(days=i*7)
-                week_start = week_end - timedelta(days=6)  # 7-day period
-
-            week_completions = Task.query.filter(
-                and_(
-                    Task.user_id == user_id,
-                    Task.is_completed.is_(True),
-                    Task.completed_at.isnot(None),
-                    func.date(Task.completed_at) >= week_start,
-                    func.date(Task.completed_at) <= week_end,
-                )
-            ).count()
-
-            weekly_trend.insert(0, {
-                'week_start': week_start.isoformat(),
-                'week_end': week_end.isoformat(),
-                'completions': week_completions,
-                'is_current_week': (i == 0),
-            })
+        recent_completions, weekly_trend = _recent_activity(user_id, today)
 
         return jsonify({
             'overview': {
