@@ -4,6 +4,8 @@ from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 from sqlalchemy import and_, asc, desc, or_
+from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.exceptions import BadRequest
 
 from app.models import Task, db
 from app.utils.auth import jwt_required_with_user
@@ -21,6 +23,7 @@ tasks_bp = Blueprint('tasks', __name__)
 def get_tasks(current_user):
     """Return paginated tasks filtered and sorted per query parameters."""
     try:
+        # Parse filters and pagination from request
         # Get pagination parameters
         page, per_page = validate_pagination_params(request.args)
 
@@ -84,7 +87,7 @@ def get_tasks(current_user):
             'filters_applied': filters,
         }), 200
 
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         current_app.logger.exception("Failed to get tasks")
         return jsonify({'error': 'Failed to get tasks', 'details': str(exc)}), 500
 
@@ -94,58 +97,69 @@ def get_tasks(current_user):
 def create_task(current_user):
     """Create a new task for the authenticated user."""
     try:
+        # Parse incoming payload
         data = request.get_json()
+    except BadRequest as error:
+        return jsonify({'error': 'Invalid JSON payload', 'details': str(error)}), 400
 
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
 
+    try:
         # Validate input data
         errors = validate_task_data(data, current_user.id)
-        if errors:
-            return jsonify({'error': 'Validation failed', 'details': errors}), 400
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Task validation failed")
+        return jsonify({'error': 'Failed to create task', 'details': str(exc)}), 500
 
-        # Create new task
-        category_id_value = data.get('category_id')
-        if category_id_value == '' or category_id_value is None:
+    if errors:
+        return jsonify({'error': 'Validation failed', 'details': errors}), 400
+
+    category_id_value = data.get('category_id')
+    if category_id_value == '' or category_id_value is None:
+        category_id_value = None
+    elif category_id_value:
+        try:
+            category_id_value = int(category_id_value)
+        except (ValueError, TypeError):
             category_id_value = None
-        elif category_id_value:
-            try:
-                category_id_value = int(category_id_value)
-            except (ValueError, TypeError):
-                category_id_value = None
 
-        # Prepare description
-        description_value = data.get('description') or ''
-        description_value = description_value.strip() if description_value else None
+    # Prepare description
+    description_value = data.get('description') or ''
+    description_value = description_value.strip() if description_value else None
 
-        task = Task(
-            user_id=current_user.id,
-            title=data['title'].strip(),
-            description=description_value,
-            priority=data.get('priority', 'medium'),
-            category_id=category_id_value
-        )
+    # Create new task
+    task = Task(
+        user_id=current_user.id,
+        title=data['title'].strip(),
+        description=description_value,
+        priority=data.get('priority', 'medium'),
+        category_id=category_id_value
+    )
 
-        # Set due date if provided
-        due_date_value = data.get('due_date')
-        if due_date_value and isinstance(due_date_value, str) and due_date_value.strip():
-            try:
-                task.due_date = datetime.fromisoformat(due_date_value.replace('Z', '+00:00')).date()
-            except (ValueError, AttributeError):
-                pass  # Keep due_date as None if parsing fails
+    # Set due date if provided
+    due_date_value = data.get('due_date')
+    if due_date_value and isinstance(due_date_value, str) and due_date_value.strip():
+        try:
+            task.due_date = datetime.fromisoformat(due_date_value.replace('Z', '+00:00')).date()
+        except (ValueError, AttributeError):
+            task.due_date = None
+    else:
+        task.due_date = None
 
+    try:
+        # Persist new task
         db.session.add(task)
         db.session.commit()
-
-        return jsonify({
-            'message': 'Task created successfully',
-            'task': task.to_dict(),
-        }), 201
-
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         db.session.rollback()
         current_app.logger.exception("Failed to create task")
         return jsonify({'error': 'Failed to create task', 'details': str(exc)}), 500
+
+    return jsonify({
+        'message': 'Task created successfully',
+        'task': task.to_dict(),
+    }), 201
 
 
 @tasks_bp.route('/<int:task_id>', methods=['GET'])
@@ -153,16 +167,16 @@ def create_task(current_user):
 def get_task(current_user, task_id):
     """Retrieve a single task by identifier."""
     try:
+        # Fetch requested task
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
-
-        return jsonify({'task': task.to_dict()}), 200
-
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         current_app.logger.exception("Failed to get task")
         return jsonify({'error': 'Failed to get task', 'details': str(exc)}), 500
+
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
+
+    return jsonify({'task': task.to_dict()}), 200
 
 
 @tasks_bp.route('/<int:task_id>', methods=['PUT'])
@@ -170,66 +184,80 @@ def get_task(current_user, task_id):
 def update_task(current_user, task_id):
     """Update metadata for an existing task."""
     try:
+        # Fetch requested task
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Failed to load task for update")
+        return jsonify({'error': 'Failed to update task', 'details': str(exc)}), 500
 
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
+    try:
+        # Parse incoming payload
         data = request.get_json()
+    except BadRequest as error:
+        return jsonify({'error': 'Invalid JSON payload', 'details': str(error)}), 400
 
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
 
+    try:
         # Validate input data
         errors = validate_task_data(data, current_user.id, task_id)
-        if errors:
-            return jsonify({'error': 'Validation failed', 'details': errors}), 400
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Task validation failed during update")
+        return jsonify({'error': 'Failed to update task', 'details': str(exc)}), 500
 
-        # Update task fields
-        if 'title' in data:
-            task.title = data['title'].strip()
+    if errors:
+        return jsonify({'error': 'Validation failed', 'details': errors}), 400
 
-        if 'description' in data:
-            desc_value = data['description']
-            task.description = desc_value.strip() if desc_value else None
+    # Update task fields
+    if 'title' in data:
+        task.title = data['title'].strip()
 
-        if 'priority' in data:
-            task.priority = data['priority']
+    if 'description' in data:
+        desc_value = data['description']
+        task.description = desc_value.strip() if desc_value else None
 
-        if 'category_id' in data:
-            category_id_value = data['category_id']
-            if category_id_value == '' or category_id_value is None:
+    if 'priority' in data:
+        task.priority = data['priority']
+
+    if 'category_id' in data:
+        category_id_value = data['category_id']
+        if category_id_value == '' or category_id_value is None:
+            category_id_value = None
+        elif category_id_value:
+            try:
+                category_id_value = int(category_id_value)
+            except (ValueError, TypeError):
                 category_id_value = None
-            elif category_id_value:
-                try:
-                    category_id_value = int(category_id_value)
-                except (ValueError, TypeError):
-                    category_id_value = None
-            task.category_id = category_id_value
+        task.category_id = category_id_value
 
-        if 'due_date' in data:
-            due_date_value = data['due_date']
-            if due_date_value and (isinstance(due_date_value, str) and due_date_value.strip()):
-                try:
-                    task.due_date = datetime.fromisoformat(
-                        due_date_value.replace('Z', '+00:00')
-                    ).date()
-                except (ValueError, AttributeError):
-                    task.due_date = None
-            else:
+    if 'due_date' in data:
+        due_date_value = data['due_date']
+        if due_date_value and (isinstance(due_date_value, str) and due_date_value.strip()):
+            try:
+                task.due_date = datetime.fromisoformat(
+                    due_date_value.replace('Z', '+00:00')
+                ).date()
+            except (ValueError, AttributeError):
                 task.due_date = None
+        else:
+            task.due_date = None
 
+    try:
+        # Commit updates to the database
         db.session.commit()
-
-        return jsonify({
-            'message': 'Task updated successfully',
-            'task': task.to_dict(),
-        }), 200
-
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         db.session.rollback()
         current_app.logger.exception("Failed to update task")
         return jsonify({'error': 'Failed to update task', 'details': str(exc)}), 500
+
+    return jsonify({
+        'message': 'Task updated successfully',
+        'task': task.to_dict(),
+    }), 200
 
 
 @tasks_bp.route('/<int:task_id>', methods=['DELETE'])
@@ -237,20 +265,25 @@ def update_task(current_user, task_id):
 def delete_task(current_user, task_id):
     """Remove a task from the user's collection."""
     try:
+        # Lookup task prior to deletion
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Failed to load task for deletion")
+        return jsonify({'error': 'Failed to delete task', 'details': str(exc)}), 500
 
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
+    try:
+        # Remove task from persistence layer
         db.session.delete(task)
         db.session.commit()
-
-        return jsonify({'message': 'Task deleted successfully'}), 200
-
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         db.session.rollback()
         current_app.logger.exception("Failed to delete task")
         return jsonify({'error': 'Failed to delete task', 'details': str(exc)}), 500
+
+    return jsonify({'message': 'Task deleted successfully'}), 200
 
 
 @tasks_bp.route('/<int:task_id>/complete', methods=['PATCH'])
@@ -259,27 +292,31 @@ def toggle_task_completion(current_user, task_id):
     """Toggle the completion state of a task."""
     try:
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Failed to load task for completion toggle")
+        return jsonify({'error': 'Failed to update task completion', 'details': str(exc)}), 500
 
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
+    if not task:
+        return jsonify({'error': 'Task not found'}), 404
 
-        # Toggle completion status
-        if task.is_completed:
-            task.mark_incomplete()
-        else:
-            task.mark_completed()
+    # Toggle completion status
+    if task.is_completed:
+        task.mark_incomplete()
+    else:
+        task.mark_completed()
 
+    try:
+        # Persist the change in completion state
         db.session.commit()
-
-        return jsonify({
-            'message': f'Task marked as {"completed" if task.is_completed else "incomplete"}',
-            'task': task.to_dict(),
-        }), 200
-
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         db.session.rollback()
         current_app.logger.exception("Failed to toggle task completion")
         return jsonify({'error': 'Failed to update task completion', 'details': str(exc)}), 500
+
+    return jsonify({
+        'message': f'Task marked as {"completed" if task.is_completed else "incomplete"}',
+        'task': task.to_dict(),
+    }), 200
 
 
 @tasks_bp.route('/overdue', methods=['GET'])
@@ -321,6 +358,6 @@ def get_overdue_tasks(current_user):
             },
         }), 200
 
-    except Exception as exc:  # pylint: disable=broad-except
+    except SQLAlchemyError as exc:
         current_app.logger.exception("Failed to fetch overdue tasks")
         return jsonify({'error': 'Failed to get overdue tasks', 'details': str(exc)}), 500

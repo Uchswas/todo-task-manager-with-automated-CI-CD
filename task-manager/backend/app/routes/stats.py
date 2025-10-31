@@ -1,10 +1,10 @@
 """Aggregate statistics endpoints for task insights."""
 
 from datetime import datetime, timedelta
-import traceback
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, current_app, jsonify
 from sqlalchemy import and_, case, func
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.models import Category, Task, db
 from app.utils.auth import jwt_required_with_user
@@ -167,10 +167,9 @@ def get_statistics(current_user):
             'generated_at': datetime.now().isoformat(),
         }), 200
 
-    except Exception as e:
-        print(f"Statistics Error: {str(e)}")
-        traceback.print_exc()
-        return jsonify({'error': 'Failed to get statistics', 'details': str(e)}), 500
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Failed to get statistics")
+        return jsonify({'error': 'Failed to get statistics', 'details': str(exc)}), 500
 
 
 @stats_bp.route('/summary', methods=['GET'])
@@ -213,5 +212,6 @@ def get_summary_stats(current_user):
             ),
         }), 200
 
-    except Exception as e:
-        return jsonify({'error': 'Failed to get summary statistics', 'details': str(e)}), 500
+    except SQLAlchemyError as exc:
+        current_app.logger.exception("Failed to get summary statistics")
+        return jsonify({'error': 'Failed to get summary statistics', 'details': str(exc)}), 500
