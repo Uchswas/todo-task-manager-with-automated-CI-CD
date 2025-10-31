@@ -1,11 +1,17 @@
+"""Configuration objects and helpers for the Flask application."""
+
 import os
 from datetime import timedelta
+from typing import Any, Dict
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 class Config:
+    """Base configuration with defaults shared across environments."""
+
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or (
         'postgresql://todo_user:password@localhost/todo_app_dev'
@@ -27,13 +33,30 @@ class Config:
     # Validation
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file upload
 
+    @classmethod
+    def init_app(cls, app) -> None:
+        """Hook for subclasses to customize the Flask app at runtime."""
+
+    @classmethod
+    def to_mapping(cls) -> Dict[str, Any]:
+        """Return a dict of uppercase configuration entries for inspection."""
+        return {
+            key: getattr(cls, key)
+            for key in dir(cls)
+            if key.isupper()
+        }
+
 
 class DevelopmentConfig(Config):
+    """Configuration tailored for local development."""
+
     DEBUG = True
     SQLALCHEMY_ECHO = True
 
 
 class TestingConfig(Config):
+    """Configuration for running the automated test suite."""
+
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or (
         'postgresql://todo_user:password@localhost/todo_app_test'
@@ -42,6 +65,8 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
+    """Configuration optimized for production deployments."""
+
     DEBUG = False
     SQLALCHEMY_ECHO = False
 

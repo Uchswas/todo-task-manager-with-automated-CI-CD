@@ -1,3 +1,5 @@
+"""Authentication-related utilities: validators and decorators."""
+
 import re
 from functools import wraps
 
@@ -9,6 +11,7 @@ from app.models import User, db
 
 
 def validate_email(email):
+    """Return True when the email string matches the expected format."""
     if not email or not isinstance(email, str):
         return False
 
@@ -21,6 +24,7 @@ def validate_email(email):
 
 
 def validate_password(password):
+    """Validate password strength requirements and return a tuple of result/message."""
     if not password or len(password) < 8:
         return False, "Password must be at least 8 characters long"
 
@@ -34,6 +38,7 @@ def validate_password(password):
 
 
 def validate_name(name):
+    """Ensure a display name meets length requirements."""
     if not name or len(name.strip()) < 2:
         return False, "Name must be at least 2 characters long"
 
@@ -44,6 +49,7 @@ def validate_name(name):
 
 
 def jwt_required_with_user(f):
+    """Decorator that injects the authenticated user object into a route."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
@@ -63,6 +69,7 @@ def jwt_required_with_user(f):
 
 
 def validate_user_registration(data):
+    """Validate registration payload and return a list of error messages."""
     errors = []
 
     # Check required fields
@@ -97,6 +104,7 @@ def validate_user_registration(data):
 
 
 def validate_user_login(data):
+    """Validate login payload and return any missing-field errors."""
     errors = []
 
     if not data.get('email'):

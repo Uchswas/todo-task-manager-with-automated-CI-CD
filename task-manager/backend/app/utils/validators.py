@@ -1,3 +1,5 @@
+"""Validation helpers for task manager request payloads and parameters."""
+
 import re
 from datetime import datetime
 
@@ -5,6 +7,7 @@ from app.models import Category
 
 
 def validate_task_data(data, user_id=None, _task_id=None):
+    """Return a list of validation errors for task creation or updates."""
     errors = []
 
     # Title validation
@@ -47,6 +50,7 @@ def validate_task_data(data, user_id=None, _task_id=None):
 
 
 def validate_category_data(data, user_id=None, exclude_category_id=None):
+    """Validate category payload fields and enforce uniqueness per user."""
     errors = []
 
     # Name validation
@@ -78,6 +82,7 @@ def validate_category_data(data, user_id=None, exclude_category_id=None):
 
 
 def validate_pagination_params(request_args):
+    """Extract sanitized pagination parameters from request arguments."""
     try:
         page = max(int(request_args.get('page', 1)), 1)
         per_page = int(request_args.get('per_page', 50))
@@ -88,6 +93,7 @@ def validate_pagination_params(request_args):
 
 
 def validate_task_filters(request_args):
+    """Parse and normalize task filtering parameters from a request."""
     filters = {}
 
     # Status filter

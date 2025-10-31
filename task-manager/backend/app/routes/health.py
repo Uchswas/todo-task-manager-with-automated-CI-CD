@@ -1,3 +1,5 @@
+"""Health and diagnostics endpoints for the API."""
+
 import time
 from datetime import datetime, timezone
 
@@ -19,6 +21,7 @@ def _utc_timestamp():
 
 @health_bp.route('/health', methods=['GET'])
 def health_check():
+    """Report application status along with uptime and database health."""
     try:
         # Check database connection
         db_status = check_database_connection()
@@ -53,6 +56,7 @@ def health_check():
 
 
 def check_database_connection():
+    """Measure database connectivity and response time."""
     try:
         start_time_db = time.time()
 
@@ -74,6 +78,7 @@ def check_database_connection():
 
 
 def get_memory_usage():
+    """Return current process memory use in megabytes."""
     try:
         # Get current process memory usage
         process = psutil.Process()
@@ -87,6 +92,7 @@ def get_memory_usage():
 
 @health_bp.route('/health/detailed', methods=['GET'])
 def detailed_health_check():
+    """Provide an expanded health report with system metrics and counts."""
     try:
         # Database connection check
         db_status = check_database_connection()

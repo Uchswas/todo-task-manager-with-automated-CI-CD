@@ -1,3 +1,5 @@
+"""Routes for managing task categories and category-specific tasks."""
+
 from sqlalchemy import asc, desc
 from flask import Blueprint, request, jsonify
 
@@ -14,6 +16,7 @@ categories_bp = Blueprint('categories', __name__)
 @categories_bp.route('', methods=['GET'])
 @jwt_required_with_user
 def get_categories(current_user):
+    """Return all categories owned by the authenticated user."""
     try:
         categories = Category.query.filter_by(user_id=current_user.id).order_by(Category.name).all()
 
@@ -28,6 +31,7 @@ def get_categories(current_user):
 @categories_bp.route('', methods=['POST'])
 @jwt_required_with_user
 def create_category(current_user):
+    """Create a new category for the authenticated user."""
     try:
         data = request.get_json()
 
@@ -62,6 +66,7 @@ def create_category(current_user):
 @categories_bp.route('/<int:category_id>', methods=['GET'])
 @jwt_required_with_user
 def get_category(current_user, category_id):
+    """Fetch a single category by identifier."""
     try:
         category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
 
@@ -77,6 +82,7 @@ def get_category(current_user, category_id):
 @categories_bp.route('/<int:category_id>', methods=['PUT'])
 @jwt_required_with_user
 def update_category(current_user, category_id):
+    """Update category metadata such as name or color."""
     try:
         category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
 
@@ -115,6 +121,7 @@ def update_category(current_user, category_id):
 @categories_bp.route('/<int:category_id>', methods=['DELETE'])
 @jwt_required_with_user
 def delete_category(current_user, category_id):
+    """Delete a category that is not associated with any tasks."""
     try:
         category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
 
@@ -143,6 +150,7 @@ def delete_category(current_user, category_id):
 @categories_bp.route('/<int:category_id>/tasks', methods=['GET'])
 @jwt_required_with_user
 def get_category_tasks(current_user, category_id):
+    """List tasks belonging to a category with pagination and sorting."""
     try:
         category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
 

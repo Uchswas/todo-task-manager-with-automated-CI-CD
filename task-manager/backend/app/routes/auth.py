@@ -1,3 +1,5 @@
+"""Routes for user authentication and profile management."""
+
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required
 
@@ -14,6 +16,7 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    """Create a new user account and seed default categories."""
     try:
         data = request.get_json()
 
@@ -70,6 +73,7 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """Authenticate a user and issue a JWT access token."""
     try:
         data = request.get_json()
 
@@ -104,6 +108,7 @@ def login():
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required_with_user
 def get_profile(current_user):
+    """Return the authenticated user's profile information."""
     try:
         return jsonify({
             'user': current_user.to_dict()
@@ -117,6 +122,7 @@ def get_profile(current_user):
 @auth_bp.route('/profile', methods=['PUT'])
 @jwt_required_with_user
 def update_profile(current_user):
+    """Update the authenticated user's profile details."""
     try:
         data = request.get_json()
 
@@ -167,6 +173,7 @@ def update_profile(current_user):
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
+    """Acknowledge logout; JWT invalidation handled client-side."""
     # In a more sophisticated implementation, you might want to blacklist the token
     # For now, we just return a success response
     # The client should delete the token from storage

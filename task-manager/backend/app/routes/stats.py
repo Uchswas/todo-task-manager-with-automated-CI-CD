@@ -1,3 +1,5 @@
+"""Aggregate statistics endpoints for task insights."""
+
 from datetime import datetime, timedelta
 import traceback
 
@@ -13,6 +15,7 @@ stats_bp = Blueprint('stats', __name__)
 @stats_bp.route('', methods=['GET'])
 @jwt_required_with_user
 def get_statistics(current_user):
+    """Return detailed productivity and completion statistics for the user."""
     try:
         user_id = current_user.id
         today = datetime.now().date()
@@ -173,6 +176,7 @@ def get_statistics(current_user):
 @stats_bp.route('/summary', methods=['GET'])
 @jwt_required_with_user
 def get_summary_stats(current_user):
+    """Return a concise summary of current task metrics."""
     try:
         user_id = current_user.id
         today = datetime.now().date()

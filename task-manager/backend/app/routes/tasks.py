@@ -1,3 +1,5 @@
+"""Routes for creating, retrieving, and managing tasks."""
+
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
@@ -17,6 +19,7 @@ tasks_bp = Blueprint('tasks', __name__)
 @tasks_bp.route('', methods=['GET'])
 @jwt_required_with_user
 def get_tasks(current_user):
+    """Return paginated tasks filtered and sorted per query parameters."""
     try:
         # Get pagination parameters
         page, per_page = validate_pagination_params(request.args)
@@ -89,6 +92,7 @@ def get_tasks(current_user):
 @tasks_bp.route('', methods=['POST'])
 @jwt_required_with_user
 def create_task(current_user):
+    """Create a new task for the authenticated user."""
     try:
         data = request.get_json()
 
@@ -147,6 +151,7 @@ def create_task(current_user):
 @tasks_bp.route('/<int:task_id>', methods=['GET'])
 @jwt_required_with_user
 def get_task(current_user, task_id):
+    """Retrieve a single task by identifier."""
     try:
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
 
@@ -163,6 +168,7 @@ def get_task(current_user, task_id):
 @tasks_bp.route('/<int:task_id>', methods=['PUT'])
 @jwt_required_with_user
 def update_task(current_user, task_id):
+    """Update metadata for an existing task."""
     try:
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
 
@@ -229,6 +235,7 @@ def update_task(current_user, task_id):
 @tasks_bp.route('/<int:task_id>', methods=['DELETE'])
 @jwt_required_with_user
 def delete_task(current_user, task_id):
+    """Remove a task from the user's collection."""
     try:
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
 
@@ -249,6 +256,7 @@ def delete_task(current_user, task_id):
 @tasks_bp.route('/<int:task_id>/complete', methods=['PATCH'])
 @jwt_required_with_user
 def toggle_task_completion(current_user, task_id):
+    """Toggle the completion state of a task."""
     try:
         task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
 
@@ -277,6 +285,7 @@ def toggle_task_completion(current_user, task_id):
 @tasks_bp.route('/overdue', methods=['GET'])
 @jwt_required_with_user
 def get_overdue_tasks(current_user):
+    """Return paginated list of overdue tasks ordered by due date."""
     try:
         # Get pagination parameters
         page, per_page = validate_pagination_params(request.args)
