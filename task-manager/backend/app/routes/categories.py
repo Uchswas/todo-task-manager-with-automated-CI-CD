@@ -1,8 +1,12 @@
+from sqlalchemy import asc, desc
 from flask import Blueprint, request, jsonify
 
 from app.models import Category, Task, db
 from app.utils.auth import jwt_required_with_user
-from app.utils.validators import validate_category_data
+from app.utils.validators import (
+    validate_category_data,
+    validate_pagination_params,
+)
 
 categories_bp = Blueprint('categories', __name__)
 
@@ -146,7 +150,6 @@ def get_category_tasks(current_user, category_id):
             return jsonify({'error': 'Category not found'}), 404
 
         # Get pagination parameters
-        from app.utils.validators import validate_pagination_params
         page, per_page = validate_pagination_params(request.args)
 
         # Get tasks in this category
@@ -161,7 +164,6 @@ def get_category_tasks(current_user, category_id):
         if sort_order not in ['asc', 'desc']:
             sort_order = 'desc'
 
-        from sqlalchemy import desc, asc
         sort_column = getattr(Task, sort_by)
         if sort_order == 'desc':
             query = query.order_by(desc(sort_column))

@@ -2,7 +2,12 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required
 
 from app.models import User, Category, db
-from app.utils.auth import validate_user_registration, validate_user_login, jwt_required_with_user
+from app.utils.auth import (
+    jwt_required_with_user,
+    validate_email,
+    validate_user_login,
+    validate_user_registration,
+)
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -132,7 +137,6 @@ def update_profile(current_user):
             email = data['email'].lower().strip()
 
             # Validate email format
-            from app.utils.auth import validate_email
             if not validate_email(email):
                 return jsonify({'error': 'Invalid email format'}), 400
 

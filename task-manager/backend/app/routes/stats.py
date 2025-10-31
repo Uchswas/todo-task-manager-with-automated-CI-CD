@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import traceback
 
 from flask import Blueprint, jsonify
 from sqlalchemy import and_, case, func
@@ -164,7 +165,6 @@ def get_statistics(current_user):
         }), 200
 
     except Exception as e:
-        import traceback
         print(f"Statistics Error: {str(e)}")
         traceback.print_exc()
         return jsonify({'error': 'Failed to get statistics', 'details': str(e)}), 500

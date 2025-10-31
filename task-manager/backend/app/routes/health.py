@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
 import time
+from datetime import datetime, timezone
 
 import psutil
 from flask import Blueprint, jsonify
 
-from app.models import db
+from app.models import Category, Task, User, db
 
 health_bp = Blueprint('health', __name__)
 
@@ -114,8 +114,6 @@ def detailed_health_check():
 
         # Check database table counts (basic functionality test)
         try:
-            from app.models import User, Task, Category
-
             table_stats = {
                 "users_count": User.query.count(),
                 "tasks_count": Task.query.count(),
