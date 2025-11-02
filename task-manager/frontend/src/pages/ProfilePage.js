@@ -129,7 +129,7 @@ const ProfilePage = () => {
 
         {/* Profile Form */}
         <div className="px-6 py-6">
-          <form onSubmit={handleSubmit} className="space-y-6" role="form">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">

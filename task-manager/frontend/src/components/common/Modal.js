@@ -57,10 +57,11 @@ const Modal = ({
           role="dialog"
           aria-modal="true"
           className={`inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full ${sizeClasses[size]}`}
+          data-testid="modal-panel"
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="bg-white px-6 py-4 border-b border-gray-200">
+            <div className="bg-white px-6 py-4 border-b border-gray-200" data-testid="modal-header">
               <div className="flex items-center justify-between">
                 {title && (
                   <h3 className="text-lg font-medium text-gray-900">
@@ -82,7 +83,7 @@ const Modal = ({
           )}
 
           {/* Content */}
-          <div className="bg-white px-6 py-4">
+          <div className="bg-white px-6 py-4" data-testid="modal-content">
             {children}
           </div>
         </div>
