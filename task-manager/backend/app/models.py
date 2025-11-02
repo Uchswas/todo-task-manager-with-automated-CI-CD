@@ -1,3 +1,5 @@
+"""Database models and persistence helpers for the task manager API."""
+
 from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
@@ -8,6 +10,8 @@ db = SQLAlchemy()
 
 
 class User(db.Model):
+    """Application user account."""
+
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -31,12 +35,15 @@ class User(db.Model):
     )
 
     def set_password(self, password):
+        """Hash and store the supplied plaintext password."""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """Return True if the password matches the stored hash."""
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
+        """Serialize the user for JSON responses."""
         return {
             'id': self.id,
             'email': self.email,
@@ -45,10 +52,13 @@ class User(db.Model):
         }
 
     def __repr__(self):
+        """Return a helpful string representation for debugging."""
         return f'<User {self.email}>'
 
 
 class Category(db.Model):
+    """Task categorization owned by a user."""
+
     __tablename__ = 'categories'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -64,6 +74,7 @@ class Category(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'name', name='unique_user_category'),)
 
     def to_dict(self):
+        """Serialize the category for JSON responses."""
         # Check if the object is bound to a session to avoid DetachedInstanceError
         task_count = 0
         if inspect(self).session is not None:
@@ -79,10 +90,13 @@ class Category(db.Model):
         }
 
     def __repr__(self):
+        """Return a helpful string representation for debugging."""
         return f'<Category {self.name}>'
 
 
 class Task(db.Model):
+    """User-owned task with scheduling metadata."""
+
     __tablename__ = 'tasks'
 
     PRIORITY_CHOICES = ['low', 'medium', 'high']
@@ -108,20 +122,24 @@ class Task(db.Model):
     )
 
     def mark_completed(self):
+        """Mark the task as completed and set a completion timestamp."""
         self.is_completed = True
         self.completed_at = datetime.now(timezone.utc)
 
     def mark_incomplete(self):
+        """Mark the task as incomplete and clear completion metadata."""
         self.is_completed = False
         self.completed_at = None
 
     @property
     def is_overdue(self):
+        """Return True when the task is past due and not completed."""
         if not self.due_date or self.is_completed:
             return False
         return self.due_date < datetime.now(timezone.utc).date()
 
     def to_dict(self):
+        """Serialize the task for JSON responses."""
         # Check if the object is bound to a session to avoid DetachedInstanceError
         category_name = None
         if inspect(self).session is not None:
@@ -144,10 +162,12 @@ class Task(db.Model):
         }
 
     def __repr__(self):
+        """Return a helpful string representation for debugging."""
         return f'<Task {self.title}>'
 
 
 def init_db(app):
+    """Initialize database bindings and create tables if missing."""
     db.init_app(app)
 
     with app.app_context():

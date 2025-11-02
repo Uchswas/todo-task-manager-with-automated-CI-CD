@@ -1,14 +1,22 @@
+"""Application factory setup for the task manager backend."""
+
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 from app.config import config
 from app.models import db, init_db
+from app.routes.auth import auth_bp
+from app.routes.categories import categories_bp
+from app.routes.health import health_bp
+from app.routes.stats import stats_bp
+from app.routes.tasks import tasks_bp
 
 __all__ = ('create_app', 'db')
 
 
 def create_app(config_name='default'):
+    """Create and configure a Flask application instance."""
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
@@ -20,12 +28,6 @@ def create_app(config_name='default'):
     init_db(app)
 
     # Register blueprints
-    from app.routes.auth import auth_bp 
-    from app.routes.tasks import tasks_bp 
-    from app.routes.categories import categories_bp 
-    from app.routes.stats import stats_bp 
-    from app.routes.health import health_bp 
-
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(tasks_bp, url_prefix='/api/tasks')
     app.register_blueprint(categories_bp, url_prefix='/api/categories')
