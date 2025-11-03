@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import Modal from '../../components/common/Modal';
+import Modal from '../../../components/common/Modal';
 
 // Exercises the modal to confirm open/close flows, sizing, and accessibility wiring.
 

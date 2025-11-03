@@ -1,11 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
-import { useTasks } from '../../hooks/useTasks';
-import * as api from '../../utils/api';
+import { useTasks } from '../../../hooks/useTasks';
+import * as api from '../../../utils/api';
 
 // Exercises the task hook across lifecycle events and CRUD methods to ensure state stays in sync with API mocks.
 
 // Mock the API module so we can dictate the responses returned to the hook.
-jest.mock('../../utils/api');
+jest.mock('../../../utils/api');
 
 describe('useTasks Hook', () => {
   beforeEach(() => {

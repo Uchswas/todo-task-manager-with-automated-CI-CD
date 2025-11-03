@@ -1,14 +1,14 @@
 import React from 'react';
 import { renderHook, act } from '@testing-library/react';
-import { AuthProvider, useAuth } from '../../hooks/useAuth';
-import * as authUtils from '../../utils/auth';
-import * as api from '../../utils/api';
+import { AuthProvider, useAuth } from '../../../hooks/useAuth';
+import * as authUtils from '../../../utils/auth';
+import * as api from '../../../utils/api';
 
 // Covers control flow and edge cases for the authentication hook.
 
 // Mock the utils and API modules so we can fully control their behaviour in each test.
-jest.mock('../../utils/auth');
-jest.mock('../../utils/api');
+jest.mock('../../../utils/auth');
+jest.mock('../../../utils/api');
 
 // Provide a deterministic mock for localStorage interactions.
 const localStorageMock = {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
+import ConfirmDialog from '../../../components/common/ConfirmDialog';
 
 // Ensures the confirm dialog surfaces the right copy, styling, and interaction flows.
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ErrorMessage from '../../components/common/ErrorMessage';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 
 // Covers the visual and interactive affordances of the reusable error banner.
 

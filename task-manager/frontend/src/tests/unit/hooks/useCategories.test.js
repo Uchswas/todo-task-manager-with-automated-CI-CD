@@ -1,11 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
-import { useCategories } from '../../hooks/useCategories';
-import * as api from '../../utils/api';
+import { useCategories } from '../../../hooks/useCategories';
+import * as api from '../../../utils/api';
 
 // Validates hook behavior covering initial load through full CRUD lifecycle.
 
 // Mock the API module so we have full control over category responses.
-jest.mock('../../utils/api');
+jest.mock('../../../utils/api');
 
 describe('useCategories Hook', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import LoadingSpinner from '../../../components/common/LoadingSpinner';
 
 // Validates the sizing and styling variants for the loading spinner widget.
 

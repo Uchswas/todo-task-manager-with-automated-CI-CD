@@ -3,7 +3,7 @@ import {
   getUser, setUser,
   isAuthenticated, validateEmail,
   validatePassword, validateName
-} from '../../utils/auth';
+} from '../../../utils/auth';
 
 describe('Token Management', () => {
   beforeEach(() => {

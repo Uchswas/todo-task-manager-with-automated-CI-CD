@@ -4,7 +4,7 @@ import {
   getPriorityColor, getPriorityBadgeColor, getStatusColor,
   truncateText, capitalizeFirst, getInitials,
   generateRandomColor
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 
 describe('Date Formatting', () => {
   test('formatDate formats date string correctly', () => {
@@ -198,7 +198,7 @@ describe('File Utilities', () => {
 
   test('downloadJSON creates and triggers download', () => {
     // Require lazily to avoid hoisting issues with jest.mock.
-    const { downloadJSON } = require('../../utils/helpers');
+    const { downloadJSON } = require('../../../utils/helpers');
     
     // Provide sample data and desired filename for the download.
     const testData = { name: 'test', value: 123 };
@@ -216,7 +216,7 @@ describe('File Utilities', () => {
 
   test('exportToCSV handles empty data', () => {
     // Require lazily so shared mocks remain intact.
-    const { exportToCSV } = require('../../utils/helpers');
+    const { exportToCSV } = require('../../../utils/helpers');
     
     // Invoke the helper with empty datasets which should no-op.
     exportToCSV([], 'test.csv');
@@ -228,7 +228,7 @@ describe('File Utilities', () => {
 
   test('exportToCSV creates CSV content', () => {
     // Require lazily for the same reason as above.
-    const { exportToCSV } = require('../../utils/helpers');
+    const { exportToCSV } = require('../../../utils/helpers');
     
     // Provide data rows so the helper generates a downloadable CSV.
     const testData = [
@@ -250,7 +250,7 @@ describe('Debounce Utility', () => {
 
   test('debounce delays function execution', () => {
     // Debounce a mock function to ensure it waits for the timeout.
-    const { debounce } = require('../../utils/helpers');
+    const { debounce } = require('../../../utils/helpers');
     const mockFn = jest.fn();
     const debouncedFn = debounce(mockFn, 1000);
     
@@ -265,7 +265,7 @@ describe('Debounce Utility', () => {
 
   test('debounce cancels previous calls', () => {
     // Rapidly call a debounced function to ensure only the last call executes.
-    const { debounce } = require('../../utils/helpers');
+    const { debounce } = require('../../../utils/helpers');
     const mockFn = jest.fn();
     const debouncedFn = debounce(mockFn, 1000);
     
