@@ -13,7 +13,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-ENVIRONMENT="${ENVIRONMENT:-dev}"
+# ENVIRONMENT="${ENVIRONMENT:-dev}"
+ENVIRONMENT=$1
 
 # Database configuration based on environment
 case "$ENVIRONMENT" in
