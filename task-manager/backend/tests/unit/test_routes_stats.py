@@ -41,10 +41,9 @@ class ColumnStub:
 def test_get_statistics_success(monkeypatch):
     """GET /stats returns aggregated statistics when helpers succeed."""
     current_user = SimpleNamespace(id=1)
-    fake_now = SimpleNamespace(date=lambda: "today", isoformat=lambda: "ts")
 
-    # monkeypatch injects deterministic datetime for predictable timestamps.
-    monkeypatch.setattr(stats_routes, "datetime", SimpleNamespace(now=lambda: fake_now))
+    # Replace date.today() used by the route to keep output deterministic.
+    monkeypatch.setattr(stats_routes, "date", SimpleNamespace(today=lambda: "today"))
     # MagicMock stubs collapse helper outputs so we only validate response assembly.
     monkeypatch.setattr(
         stats_routes,
@@ -121,11 +120,9 @@ def test_get_summary_stats_success(monkeypatch):
         due_date=ColumnStub("due_date"),
         is_completed=ColumnStub("is_completed"),
     )
-    fake_now = SimpleNamespace(date=lambda: "today")
-
     # monkeypatch swaps ORM/model dependencies so only handler logic executes.
     monkeypatch.setattr(stats_routes, "Task", task_model)
-    monkeypatch.setattr(stats_routes, "datetime", SimpleNamespace(now=lambda: fake_now))
+    monkeypatch.setattr(stats_routes, "date", SimpleNamespace(today=lambda: "today"))
     monkeypatch.setattr(stats_routes, "jsonify", _jsonify_stub())
     monkeypatch.setattr(stats_routes, "current_app", SimpleNamespace(logger=MagicMock()))
     # monkeypatch replaces SQLAlchemy and_ so tuple-based column stubs can pass through.

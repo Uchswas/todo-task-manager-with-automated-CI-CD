@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from http import HTTPStatus
 
 from app.models import Category, Task, db
@@ -40,7 +40,10 @@ def _create_task(
     if category_id is not None:
         payload["category_id"] = category_id
     if due_date is not None:
-        payload["due_date"] = due_date.isoformat()
+        if isinstance(due_date, datetime):
+            payload["due_date"] = due_date.date().isoformat()
+        else:
+            payload["due_date"] = due_date.isoformat()
 
     _, payload = post_json(client, "/api/tasks", payload)
     task = payload["task"]
@@ -61,8 +64,8 @@ def _create_task(
 def test_stats_overview_counts(authorized_client: AuthorizedClient):
     """GET /api/stats aggregates totals, deadlines, and breakdowns."""
     # Seed a mix of completed, pending, and overdue tasks to exercise the various counters
-    today = datetime.now(timezone.utc).date()
-    current_week_day = datetime.now(timezone.utc) - timedelta(days=1)
+    today = date.today()
+    current_week_day = datetime.now() - timedelta(days=1)
 
     work_category = _create_category(authorized_client, "Analytics", "#abcdef")
 
@@ -82,7 +85,7 @@ def test_stats_overview_counts(authorized_client: AuthorizedClient):
     _create_task(
         authorized_client,
         title="Overdue item",
-        due_date=today - timedelta(days=1),
+        due_date=(today - timedelta(days=2)),
     )
 
     response, payload = get_json(authorized_client, "/api/stats")
@@ -125,7 +128,7 @@ def test_stats_summary_matches_overview(authorized_client: AuthorizedClient):
     _create_task(
         authorized_client,
         title="Task 3",
-        due_date=datetime.now(timezone.utc) - timedelta(days=1),
+        due_date=date.today() - timedelta(days=2),
     )
 
     summary_response, summary = get_json(

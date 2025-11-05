@@ -32,18 +32,18 @@ def test_user_to_dict_formats_datetime():
 
 
 @pytest.mark.parametrize(
-    ("due_date", "is_completed", "expected"),
+    ("days_offset", "is_completed", "expected"),
     [
-        (date.today(), False, False),
-        (date.today(), True, False),
-        (date.today() + timedelta(days=1), False, False),
-        (date.today() - timedelta(days=1), False, True),
+        (0, False, False),
+        (0, True, False),
+        (2, False, False),
+        (-3, False, True),
     ],
 )
-def test_task_is_overdue(due_date, is_completed, expected):
+def test_task_is_overdue(days_offset, is_completed, expected):
     """Task.is_overdue reflects due date and completion status."""
-    task = Task(user_id=1, title="Test Task", due_date=due_date, is_completed=is_completed)
-
+    actual_due_date = date.today() + timedelta(days=days_offset)
+    task = Task(user_id=1, title="Test Task", due_date=actual_due_date, is_completed=is_completed)
     assert task.is_overdue is expected
 
 

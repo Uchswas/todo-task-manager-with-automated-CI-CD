@@ -1,6 +1,6 @@
 """Database models and persistence helpers for the task manager API."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
@@ -136,7 +136,7 @@ class Task(db.Model):
         """Return True when the task is past due and not completed."""
         if not self.due_date or self.is_completed:
             return False
-        return self.due_date < datetime.now(timezone.utc).date()
+        return self.due_date < date.today()
 
     def to_dict(self):
         """Serialize the task for JSON responses."""

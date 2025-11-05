@@ -1,6 +1,6 @@
 """Aggregate statistics endpoints for task insights."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from flask import Blueprint, current_app, jsonify
 from sqlalchemy import and_, case, func
@@ -168,7 +168,7 @@ def get_statistics(current_user):
     """Return detailed productivity and completion statistics for the user."""
     try:
         user_id = current_user.id
-        today = datetime.now().date()
+        today = date.today()
 
         # Basic task counts
         total_tasks, completed_tasks, pending_tasks = _basic_task_counts(user_id)

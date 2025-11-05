@@ -55,10 +55,31 @@ export const formatRelativeTime = (dateString) => {
   return formatDate(dateString);
 };
 
+const normalizeToLocalDate = (dateString) => {
+  if (!dateString) return null;
+
+  if (!dateString.includes('T')) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    if ([year, month, day].some(Number.isNaN)) {
+      return null;
+    }
+    return new Date(year, month - 1, day);
+  }
+
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+};
+
 export const isOverdue = (dueDateString) => {
   if (!dueDateString) return false;
   
-  const dueDate = new Date(dueDateString);
+  const dueDate = normalizeToLocalDate(dueDateString);
+  if (!dueDate) return false;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -68,17 +89,24 @@ export const isOverdue = (dueDateString) => {
 export const isDueToday = (dueDateString) => {
   if (!dueDateString) return false;
   
-  const dueDate = new Date(dueDateString);
+  const dueDate = normalizeToLocalDate(dueDateString);
+  if (!dueDate) return false;
+
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
-  return dueDate.toDateString() === today.toDateString();
+  return dueDate.getTime() === today.getTime();
 };
 
 export const isDueSoon = (dueDateString, days = 3) => {
   if (!dueDateString) return false;
   
-  const dueDate = new Date(dueDateString);
+  const dueDate = normalizeToLocalDate(dueDateString);
+  if (!dueDate) return false;
+
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const futureDays = new Date(today);
   futureDays.setDate(today.getDate() + days);
   
