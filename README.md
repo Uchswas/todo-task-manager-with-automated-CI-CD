@@ -106,7 +106,7 @@ Open two terminals:
 - Run tests:
   ```bash
   cd frontend
-  npm test
+  npm test -- --watchAll=false
   ```
 
 ### API Endpoints
