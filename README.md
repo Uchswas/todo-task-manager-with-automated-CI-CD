@@ -106,7 +106,9 @@ Open two terminals:
 - Run tests:
   ```bash
   cd frontend
-  npm test -- --watchAll=false
+  npm run test:unit
+  npm run test:integration
+  npm run test:all
   ```
 
 ### API Endpoints
