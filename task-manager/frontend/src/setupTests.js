@@ -44,16 +44,50 @@ afterAll(() => {
   console.warn = originalWarn;
 });
 
-// Mock localStorage with persistence across test resets
+// Mock localStorage with actual storage functionality
+const localStorageStore = new Map();
+
+const mockedLocalStorage = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+
+const applyLocalStorageMockImplementations = () => {
+  mockedLocalStorage.getItem.mockImplementation((key) => {
+    const stringKey = String(key);
+    return localStorageStore.has(stringKey) ? localStorageStore.get(stringKey) : null;
+  });
+
+  mockedLocalStorage.setItem.mockImplementation((key, value) => {
+    localStorageStore.set(String(key), value?.toString());
+  });
+
+  mockedLocalStorage.removeItem.mockImplementation((key) => {
+    localStorageStore.delete(String(key));
+  });
+
+  mockedLocalStorage.clear.mockImplementation(() => {
+    localStorageStore.clear();
+  });
+};
+
+applyLocalStorageMockImplementations();
+
+beforeEach(() => {
+  applyLocalStorageMockImplementations();
+});
+
 Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn()
-  },
+  value: mockedLocalStorage,
   writable: true
 });
+
+// Ensure global.localStorage references window.localStorage for convenience
+if (typeof global !== 'undefined') {
+  global.localStorage = mockedLocalStorage;
+}
 
 // Mock axios
 jest.mock('axios', () => ({
@@ -96,3 +130,7 @@ jest.mock('axios', () => ({
   delete: jest.fn(),
   patch: jest.fn()
 }));
+
+// Load integration test setup
+// This will be loaded for all tests, but only executes logic for integration tests
+require('./tests/integration/setup.integration.js');
