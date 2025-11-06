@@ -25,7 +25,15 @@ export const useCategories = () => {
       const response = await categoriesAPI.createCategory(categoryData);
       const newCategory = response.data.category;
       
-      setCategories(prevCategories => [...prevCategories, newCategory]);
+      setCategories(prevCategories => {
+        const exists = prevCategories.some(category => category.id === newCategory.id);
+        if (exists) {
+          return prevCategories.map(category =>
+            category.id === newCategory.id ? newCategory : category
+          );
+        }
+        return [...prevCategories, newCategory];
+      });
       return { success: true, category: newCategory };
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Failed to create category';
@@ -89,8 +97,7 @@ export const useCategories = () => {
     updateCategory,
     deleteCategory,
     getCategoryById,
-    refreshCategories,
-    setCategories
+    refreshCategories
   };
 };
 

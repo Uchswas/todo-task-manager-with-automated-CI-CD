@@ -85,15 +85,16 @@ Open two terminals:
   ```
 - Lint the codebase:
   ```bash
-  pylint app/
+  pylint app/ tests/
   ```
-- Run tests:
+- Run all tests:
   ```bash
   pytest
   ```
 - To focus on a subset:
   ```bash
   pytest tests/unit
+  pytest tests/integration
   ```
 
 #### Frontend
@@ -105,7 +106,9 @@ Open two terminals:
 - Run tests:
   ```bash
   cd frontend
-  npm test
+  npm run test:unit
+  npm run test:integration
+  npm run test:all
   ```
 
 ### API Endpoints

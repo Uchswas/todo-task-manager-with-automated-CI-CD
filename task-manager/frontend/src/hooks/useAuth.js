@@ -12,16 +12,22 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUserState] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setTokenState] = useState(null);
+export const AuthProvider = ({ children, initialValue = null }) => {
+  // Initialize state from initialValue if provided (for testing)
+  const [user, setUserState] = useState(initialValue?.user || null);
+  const [loading, setLoading] = useState(initialValue ? false : true);
+  const [token, setTokenState] = useState(initialValue?.token || null);
 
   useEffect(() => {
+    // Skip initialization if initialValue was provided (testing scenario)
+    if (initialValue) {
+      return;
+    }
+
     const initAuth = () => {
       const savedToken = getToken();
       const savedUser = getUser();
-      
+
       if (savedToken && savedUser) {
         setTokenState(savedToken);
         setUserState(savedUser);
@@ -30,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
-  }, []);
+  }, [initialValue]);
 
   const login = async (credentials) => {
     try {
