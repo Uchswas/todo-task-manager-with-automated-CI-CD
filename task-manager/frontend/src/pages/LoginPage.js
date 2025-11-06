@@ -14,17 +14,18 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user, token, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
-    if (isAuthenticated()) {
+    // Only check authentication after auth has finished loading
+    if (!authLoading && isAuthenticated()) {
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [user, token, authLoading, navigate, from, isAuthenticated]);
 
   const validateForm = () => {
     const newErrors = {};

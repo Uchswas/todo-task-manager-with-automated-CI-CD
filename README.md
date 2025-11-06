@@ -74,6 +74,43 @@ Open two terminals:
    ```
    - Web app: http://localhost:3000
 
+### 5. Linting & Testing
+
+#### Backend
+
+- Activate the virtual environment:
+  ```bash
+  cd backend
+  source venv/bin/activate
+  ```
+- Lint the codebase:
+  ```bash
+  pylint app/ tests/
+  ```
+- Run all tests:
+  ```bash
+  pytest
+  ```
+- To focus on a subset:
+  ```bash
+  pytest tests/unit
+  pytest tests/integration
+  ```
+
+#### Frontend
+
+- Lint the codebase:
+  ```bash
+  npm run lint
+  ```
+- Run tests:
+  ```bash
+  cd frontend
+  npm run test:unit
+  npm run test:integration
+  npm run test:all
+  ```
+
 ### API Endpoints
 
 #### Authentication

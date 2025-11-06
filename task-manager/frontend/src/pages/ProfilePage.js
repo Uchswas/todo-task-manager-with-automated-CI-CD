@@ -15,6 +15,8 @@ const ProfilePage = () => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
+  const safeName = (user?.name || '').trim();
+  const displayNameParts = safeName ? safeName.split(/\s+/) : [];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -63,6 +65,12 @@ const ProfilePage = () => {
     setSubmitting(false);
 
     if (result && result.success) {
+      if (result.user) {
+        setFormData({
+          name: result.user.name || '',
+          email: result.user.email || ''
+        });
+      }
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
       setTimeout(() => setSuccess(''), 3000);
@@ -121,7 +129,20 @@ const ProfilePage = () => {
               {getInitials(user.name)}
             </div>
             <div className="text-white">
-              <h2 className="text-2xl font-bold">{user.name}</h2>
+              <h2
+                className="text-2xl font-bold"
+                aria-label={safeName || 'User'}
+              >
+                {displayNameParts.length > 0 ? (
+                  <span className="inline-flex flex-wrap gap-x-2" aria-hidden="true">
+                    {displayNameParts.map((part, index) => (
+                      <span key={`${part}-${index}`}>{part}</span>
+                    ))}
+                  </span>
+                ) : (
+                  safeName || 'User'
+                )}
+              </h2>
               <p className="text-blue-100">{user.email}</p>
             </div>
           </div>
@@ -129,7 +150,7 @@ const ProfilePage = () => {
 
         {/* Profile Form */}
         <div className="px-6 py-6">
-          <form onSubmit={handleSubmit} className="space-y-6" role="form">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
