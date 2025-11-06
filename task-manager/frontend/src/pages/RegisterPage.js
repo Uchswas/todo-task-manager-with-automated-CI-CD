@@ -17,14 +17,15 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [errorDetails, setErrorDetails] = useState([]);
 
-  const { register, isAuthenticated } = useAuth();
+  const { register, isAuthenticated, user, token, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated()) {
+    // Only check authentication after auth has finished loading
+    if (!authLoading && isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [user, token, authLoading, navigate, isAuthenticated]);
 
   const validateForm = () => {
     const newErrors = {};
