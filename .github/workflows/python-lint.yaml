@@ -21,3 +21,4 @@ jobs:
       working-directory: task-manager/backend
       run: |
         pylint . --ignore venv,.venv
+        
