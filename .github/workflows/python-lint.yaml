@@ -20,5 +20,5 @@ jobs:
     - name: Run pylint
       working-directory: task-manager/backend
       run: |
-        pylint . --ignore venv,.venv
+        pylint app tests run.py --ignore venv,.venv
         
