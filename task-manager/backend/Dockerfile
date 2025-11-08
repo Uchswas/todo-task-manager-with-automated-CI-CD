@@ -15,4 +15,6 @@ ENV FLASK_ENV=development
 
 EXPOSE 5000
 
-CMD ["python", "run.py"]
+COPY endpoint.sh .
+RUN chmod +x endpoint.sh
+CMD ["./endpoint.sh"]
