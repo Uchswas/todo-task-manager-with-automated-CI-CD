@@ -9,12 +9,12 @@ services:
 
 
   db-setup:
-    image: postgres:15              # has psql inside
+    image: postgres:15              
     depends_on:
       - db
     working_dir: /app
     volumes:
-      - .:/app                      # mount your repo so script is visible
+      - .:/app                     
     environment:
       PGHOST: db
       PGUSER: todo_user
