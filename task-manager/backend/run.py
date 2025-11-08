@@ -1,3 +1,5 @@
+"""Application entry point for the Flask backend."""
+
 import os
 from app import create_app
 
