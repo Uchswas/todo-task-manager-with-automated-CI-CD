@@ -72,8 +72,8 @@ When the final PR is merged into the `main` branch, the workflow automatically t
 
 ### Area of Technical Depth
 
-- Ahmed Elgendy will focus mostly on all testing (unit, integration and E2E) and its configuration.
-- Uchswas Paul will focus mostly on the configuration aspects of the servers and deployment of containers.
+- Ahmed Elgendy will focus on all testing (smoke, unit, integration and E2E), linting, and their configurations.
+- Uchswas Paul will focus on server configuration and container deployments. This includes provisioning test and production environments, as well as automating configuration and deployments using Docker and Ansible. He is also responsible for setting up GitHub rules, branch protections, workflows, and secret management.
 
 ### Branch Strategy
 
