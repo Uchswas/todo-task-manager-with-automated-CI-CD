@@ -2,7 +2,7 @@ name: Python Lint
 on: [push, pull_request]
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
