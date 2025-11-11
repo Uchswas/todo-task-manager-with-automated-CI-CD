@@ -50,17 +50,23 @@
 
 ---
 
+### Value Added
+
+The finished tasks provide a solid starting foundation for our CI/CD pipeline. The unit and integration test suites ensure that code changes won't introduce any regression to current system behavior. Maintaining a 100% linting score acts a quality gate that prevents low quality code from entering the code base. Containerization allows for consistent development and testing environments and in the next sprint will also ensure the same for production. All of these components enable us to ship features faster while maintaining code quality and system reliability.
+
+---
+
 ## 2. Next Steps
 
 | Task | Owner | Duration |
 |------|-------|----------|
-| Set up Playwright test configuration and page object models | Ahmed Elgendy | 0.5 days |
+| Set up Playwright test configuration and page object models for login, dashboard, and task pages | Ahmed Elgendy | 0.5 days |
 | Write E2E tests for authentication flows (registration and login) | Ahmed Elgendy | 0.5 days |
-| Write E2E tests for task management (create, read, update, delete) | Ahmed Elgendy | 1 day |
-| Write E2E tests for categories and statistics pages | Ahmed Elgendy | 0.5 days |
+| Write E2E tests for full task lifecycle including CRUD operations and status updates | Ahmed Elgendy | 1 day |
+| Write E2E tests for categories and statistics dashboards | Ahmed Elgendy | 0.5 days |
 | Configure Playwright to run tests across Chrome, Firefox, and Edge | Ahmed Elgendy | 0.5 days |
-| Create smoke test suite for critical production paths | Ahmed Elgendy | 1 day |
-| Secret Management for deployment | Uchswas Paul | 0.5 days
+| Create smoke test suite for critical paths (login and basic task operations) | Ahmed Elgendy | 1 day |
+| Maintain deployment secrets and environment configurations using the proper tools (GitHub Secrets Manager, Ansible Vault, etc..) | Uchswas Paul | 0.5 days |
 | Create Ansible playbook for test environment setup | Uchswas Paul | 1 days |
 | Create Ansible playbook for production environment setup | Uchswas Paul | 0.5 days |
 | Create workflow that triggers on PR merge to release/* branches | Uchswas Paul | 0.5 days |
@@ -89,6 +95,6 @@
 ### What We'll Do Differently
 
 - Add explicit deadlines in GitHub Issues
-- Post daily progress updates to keep both aware of the status
+- Post daily progress updates to keep members aware of the status
 - Break tasks >2 days into smaller sub-tasks (e.g., "E2E tests" → "Setup Playwright", "Auth tests", "Task tests")
 - Add 25% buffer to estimates and track actual vs estimated time
