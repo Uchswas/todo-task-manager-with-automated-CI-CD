@@ -34,13 +34,13 @@
 
 **Linting Quality Gate Workflows** ([commit e0d64a1](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/e0d64a1), [commit 980ba2c](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/980ba2c))
 - Created Python Lint workflow running pylint on backend code (`app/`, `tests/`, `run.py`)
-- Created ESLint workflow running eslint on frontend (`.js`, `.jsx`, `.ts`, `.tsx` files)
-- Both workflows run on every push and pull request using self-hosted runner
+- Created ESLint workflow running ESLint on frontend (`.js`, `.jsx`, `.ts`, `.tsx` files)
+- Both workflows run on every push and pull request using a self-hosted runner
 - Enforces 100% quality threshold to prevent merging low-quality code
 
 **Docker Setup** ([commit fc1e80f](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/fc1e80f))
 - Created Dockerfiles for backend using Python 3.11-slim and frontend using Node 18-alpine base images
-- Backend includes health check script (`endpoint.sh`) that waits for PostgreSQL availability before starting Flask
+- Backend includes a script (`endpoint.sh`) that waits for PostgreSQL availability before starting Flask
 
 **Docker Compose Configuration** ([commit fc1e80f](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/fc1e80f))
 - Configured multi-container orchestration with PostgreSQL database, database initialization, backend API, and frontend services
@@ -60,7 +60,8 @@
 | Write E2E tests for categories and statistics pages | Ahmed Elgendy | 0.5 days |
 | Configure Playwright to run tests across Chrome, Firefox, and Edge | Ahmed Elgendy | 0.5 days |
 | Create smoke test suite for critical production paths | Ahmed Elgendy | 1 day |
-| Create Ansible playbook for test environment setup | Uchswas Paul | 0.5 days |
+| Secret Management for deployment | Uchswas Paul | 0.5 days
+| Create Ansible playbook for test environment setup | Uchswas Paul | 1 days |
 | Create Ansible playbook for production environment setup | Uchswas Paul | 0.5 days |
 | Create workflow that triggers on PR merge to release/* branches | Uchswas Paul | 0.5 days |
 | Implement changelog generation from commit history | Uchswas Paul | 0.5 days |
@@ -81,13 +82,13 @@
 
 ### What Didn't Work Well
 
-- Not having sudo permissions on the VM made us rethink how to use Ansible since we can't install any system packages
-- Not having deadlines on tasks made it hard to track when a task was expected to be done or what is remaining for the task to be completed
-- Only the repo owner had access to configure GitHub runners and repository settings which created bottlenecks
+- Not having sudo permissions on the VM made us rethink how to use Ansible, since we can't install any system packages
+- Not having deadlines on tasks made it hard to track when a task was expected to be done or what was remaining for the task to be completed
+- Only the repo owner had access to configure GitHub runners and repository settings, which created bottlenecks
 
 ### What We'll Do Differently
 
 - Add explicit deadlines in GitHub Issues
-- Post daily progress updates to keep both aware of status
+- Post daily progress updates to keep both aware of the status
 - Break tasks >2 days into smaller sub-tasks (e.g., "E2E tests" → "Setup Playwright", "Auth tests", "Task tests")
 - Add 25% buffer to estimates and track actual vs estimated time
