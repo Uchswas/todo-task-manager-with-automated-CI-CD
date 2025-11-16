@@ -17,20 +17,15 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:unit": "react-scripts test --testPathPattern=tests/unit",
-    "test:integration": "react-scripts test --testPathPattern=tests/integration",
-    "test:all": "react-scripts test --watchAll=false",
-    "test:coverage": "react-scripts test --coverage --watchAll=false",
-    "test:ci": "react-scripts test --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter",
+    "test:unit": "react-scripts test --testPathPattern=tests/unit --watchAll=false",
+    "test:integration": "react-scripts test --testPathPattern=tests/integration --watchAll=false",
+    "test:coverage": "react-scripts test --testPathPattern=tests/unit --testPathPattern=tests/integration --coverage --watchAll=false",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "eject": "react-scripts eject",
-    "lint": "eslint src/ --ext .js,.jsx",
-    "lint:fix": "eslint src/ --ext .js,.jsx --fix"
+    "lint": "eslint src/ --ext .js,.jsx"
   },
   "eslintConfig": {
     "extends": [
