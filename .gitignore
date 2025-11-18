@@ -102,3 +102,8 @@ temp/
 # Secrets
 secrets/
 private_keys/
+
+# Playwright
+**/playwright-report
+**/test-results
+.playwright.env

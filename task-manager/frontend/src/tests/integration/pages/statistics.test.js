@@ -444,11 +444,12 @@ describe('Statistics Page Integration', () => {
     test('displays due this week count', async () => {
       // Pick a due date later in the same week to populate the "due this week" stat
       const today = new Date();
-      // Calculate end of current week (Saturday)
-      const daysUntilSaturday = (6 - today.getDay() + 7) % 7;
-      const laterThisWeek = new Date(today);
-      laterThisWeek.setDate(today.getDate() + Math.max(1, daysUntilSaturday - 1));
-      laterThisWeek.setHours(12, 0, 0, 0);
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      startOfWeek.setHours(12, 0, 0, 0);
+
+      const laterThisWeek = new Date(startOfWeek);
+      laterThisWeek.setDate(startOfWeek.getDate() + Math.min(5, today.getDay() + 2));
 
       const tasks = [
         createMockTask({ title: 'Due This Week 1', due_date: laterThisWeek.toISOString() }),

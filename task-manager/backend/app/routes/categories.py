@@ -23,7 +23,7 @@ categories_bp = Blueprint('categories', __name__)
 def _apply_category_updates(category, data, user_id, category_id=None):
     """Validate payload and mutate category attributes as needed."""
     if not data:
-        return jsonify({'error': 'No data provided'}), None
+        return (jsonify({'error': 'No data provided'}), 400), None
 
     try:
         # Validate input data
@@ -32,7 +32,10 @@ def _apply_category_updates(category, data, user_id, category_id=None):
         return None, exc
 
     if errors:
-        return jsonify({'error': 'Validation failed', 'details': errors}), None
+        return (
+            jsonify({'error': 'Category validation failed', 'details': errors}),
+            400,
+        ), None
 
     # Update category fields
     if 'name' in data:

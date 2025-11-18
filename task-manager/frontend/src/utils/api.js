@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-/* eslint-disable-next-line no-undef */
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
@@ -25,15 +24,18 @@ api.interceptors.request.use(
 );
 
 // Response interceptor to handle auth errors
+const AUTH_FAILURE_STATUSES = [401, 403, 422];
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only redirect on 401 if it's not a login/register attempt
-    // This allows login errors to be handled by the component
-    const isAuthEndpoint = error.config?.url?.includes('/api/auth/login') ||
-                          error.config?.url?.includes('/api/auth/register');
+    const status = error.response?.status;
+    // Only redirect on auth failures when the request is not auth-related
+    const isAuthEndpoint =
+      error.config?.url?.includes('/api/auth/login') ||
+      error.config?.url?.includes('/api/auth/register');
 
-    if (error.response?.status === 401 && !isAuthEndpoint) {
+    if (!isAuthEndpoint && AUTH_FAILURE_STATUSES.includes(status)) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

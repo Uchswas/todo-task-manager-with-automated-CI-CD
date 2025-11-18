@@ -108,7 +108,7 @@ Open two terminals:
   cd frontend
   npm run test:unit
   npm run test:integration
-  npm run test:all
+  npm run test:e2e
   ```
 
 ### API Endpoints
