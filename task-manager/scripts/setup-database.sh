@@ -19,18 +19,18 @@ ENVIRONMENT=$1
 # Database configuration based on environment
 case "$ENVIRONMENT" in
     dev)
-        DB_NAME="todo_app_dev"
-        DB_USER="todo_user"
-        DB_PASSWORD="todo_password"
-        DB_HOST="localhost"
-        DB_PORT="5432"
+        DB_NAME="${DB_NAME:-todo_app_dev}"
+        DB_USER="${DB_USER:-todo_user}"
+        DB_PASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD}}"
+        DB_HOST="${DB_HOST:-localhost}"
+        DB_PORT="${DB_PORT:-5432}"
         ;;
     test)
-        DB_NAME="todo_app_test"
-        DB_USER="todo_user_test"
-        DB_PASSWORD="todo_test_password"
-        DB_HOST="localhost"
-        DB_PORT="5432"
+        DB_NAME="${DB_NAME:-todo_app_test}"
+        DB_USER="${DB_USER:-todo_user_test}"
+        DB_PASSWORD="${DB_PASSWORD:-${POSTGRES_TEST_PASSWORD}}"
+        DB_HOST="${DB_HOST:-localhost}"
+        DB_PORT="${DB_PORT:-5432}"
         ;;
     *)
         echo -e "${RED}Error: Invalid environment '${ENVIRONMENT}'${NC}"
@@ -38,6 +38,13 @@ case "$ENVIRONMENT" in
         exit 1
         ;;
 esac
+
+# Validate required password
+if [ -z "$DB_PASSWORD" ]; then
+    echo -e "${RED}Error: Database password is required${NC}"
+    echo "Set DB_PASSWORD or POSTGRES_PASSWORD (for dev) / POSTGRES_TEST_PASSWORD (for test) environment variable."
+    exit 1
+fi
 
 POSTGRES_RUNNER=""
 

@@ -3,33 +3,48 @@ services:
     image: postgres:15
     container_name: todo-db
     environment:
-      POSTGRES_DB: todo_app_dev
-      POSTGRES_USER: todo_user
-      POSTGRES_PASSWORD: todo_password
-
+      POSTGRES_DB: ${POSTGRES_DB:-todo_app_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-todo_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   db-setup:
     image: postgres:15              
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     working_dir: /app
     volumes:
       - .:/app                     
     environment:
       PGHOST: db
-      PGUSER: todo_user
-      PGPASSWORD: todo_password
-      PGDATABASE: todo_app_dev
+      PGUSER: ${POSTGRES_USER:-todo_user}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-todo_app_dev}
     command: ["bash", "./scripts/setup-database.sh", "dev"]
 
   backend:
     build: ./backend
     depends_on:
-      - db-setup
+      db:
+        condition: service_healthy
+      db-setup:
+        condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgresql://todo_user:todo_password@db:5432/todo_app_dev
-      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
-
+      DATABASE_URL: ${DATABASE_URL}
+      TEST_DATABASE_URL: ${TEST_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      FLASK_ENV: ${FLASK_ENV:-development}
+      FLASK_APP: ${FLASK_APP:-run.py}
+      SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:-false}
+      TASKS_PER_PAGE: ${TASKS_PER_PAGE:-50}
     ports:
       - "5000:5000"
 
@@ -38,6 +53,6 @@ services:
     depends_on:
       - backend
     environment:
-      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5000}
     ports:
       - "3000:3000"

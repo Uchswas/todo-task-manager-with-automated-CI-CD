@@ -1,12 +1,12 @@
 const { defineConfig, devices } = require('@playwright/test');
 const path = require('path');
 
-const baseURL = 'http://localhost:3000';
-const backendURL = 'http://localhost:5000';
-const testDatabaseURL =
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+const backendURL = process.env.PLAYWRIGHT_BACKEND_URL || 'http://localhost:5000';
+const testDatabaseURL = process.env.TEST_DATABASE_URL ||
   'postgresql://todo_user_test:todo_test_password@localhost:5432/todo_app_test';
-const jwtSecret = 'playwright-e2e-secret';
-const secretKey = jwtSecret;
+const jwtSecret = process.env.JWT_SECRET || process.env.PLAYWRIGHT_JWT_SECRET || 'playwright-e2e-secret';
+const secretKey = process.env.SECRET_KEY || jwtSecret;
 
 function portFromUrl(urlString) {
   const parsed = new URL(urlString);
