@@ -15,11 +15,11 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable is required")
-    
+
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
         raise ValueError("DATABASE_URL environment variable is required")
-    
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() == 'true'
 
@@ -67,7 +67,7 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
         raise ValueError("TEST_DATABASE_URL environment variable is required")
-    
+
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)  # Shorter for testing
 
 
