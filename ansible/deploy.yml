@@ -1,0 +1,224 @@
+---
+- name: Deploy Todo Task Manager to Ubuntu 24 Server
+  hosts: all
+  become: true
+  vars:
+    app_user: "{{ deploy_user | default('ubuntu') }}"
+    app_dir: "/opt/todo-task-manager"
+    docker_compose_version: "2.24.0"
+    
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required system packages
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+          - git
+          - curl
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Install Docker using official method
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      user:
+        name: "{{ app_user }}"
+        groups: docker
+        append: yes
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Create application subdirectories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      loop:
+        - "{{ app_dir }}/task-manager"
+        - "{{ app_dir }}/task-manager/scripts"
+
+    - name: Create archive of project files locally
+      archive:
+        path: "{{ playbook_dir }}/../task-manager/"
+        dest: /tmp/task-manager.tar.gz
+        exclude_path:
+          - "{{ playbook_dir }}/../task-manager/.env"
+          - "{{ playbook_dir }}/../task-manager/__pycache__"
+          - "{{ playbook_dir }}/../task-manager/*.pyc"
+          - "{{ playbook_dir }}/../task-manager/.git"
+          - "{{ playbook_dir }}/../task-manager/node_modules"
+          - "{{ playbook_dir }}/../task-manager/.venv"
+          - "{{ playbook_dir }}/../task-manager/venv"
+          - "{{ playbook_dir }}/../task-manager/.pytest_cache"
+          - "{{ playbook_dir }}/../task-manager/*.log"
+      delegate_to: localhost
+      become: no
+      tags:
+        - deploy
+
+    - name: Copy archive to server
+      copy:
+        src: /tmp/task-manager.tar.gz
+        dest: /tmp/task-manager.tar.gz
+        mode: '0644'
+      tags:
+        - deploy
+
+    - name: Remove existing task-manager directory contents
+      file:
+        path: "{{ app_dir }}/task-manager"
+        state: absent
+      tags:
+        - deploy
+
+    - name: Recreate task-manager directory
+      file:
+        path: "{{ app_dir }}/task-manager"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      tags:
+        - deploy
+
+    - name: Extract archive on server
+      unarchive:
+        src: /tmp/task-manager.tar.gz
+        dest: "{{ app_dir }}/task-manager"
+        remote_src: yes
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+      tags:
+        - deploy
+
+    - name: Clean up archive files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/task-manager.tar.gz
+        - "{{ app_dir }}/task-manager.tar.gz"
+      tags:
+        - deploy
+
+    - name: Set ownership of application files
+      file:
+        path: "{{ app_dir }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        recurse: yes
+
+    - name: Set proper permissions on application files
+      file:
+        path: "{{ app_dir }}/task-manager"
+        mode: '0755'
+        recurse: yes
+
+    - name: Ensure .env file exists
+      stat:
+        path: "{{ app_dir }}/task-manager/.env"
+      register: env_file
+
+    - name: Warn if .env file is missing
+      debug:
+        msg: "WARNING: .env file not found. Please create it manually with all required environment variables before starting containers."
+      when: not env_file.stat.exists
+
+    - name: Ensure Docker Compose is available
+      command: docker compose version
+      register: docker_compose_check
+      changed_when: false
+      failed_when: false
+
+    - name: Stop existing containers
+      shell: docker compose down
+      args:
+        chdir: "{{ app_dir }}/task-manager"
+      ignore_errors: yes
+
+    - name: Build and start containers
+      shell: docker compose up -d --build --pull always
+      args:
+        chdir: "{{ app_dir }}/task-manager"
+      tags:
+        - deploy
+
+    - name: Wait for services to be healthy
+      wait_for:
+        port: 5000
+        host: "{{ ansible_default_ipv4.address }}"
+        delay: 10
+        timeout: 300
+      ignore_errors: yes
+
+    - name: Install ufw if not present
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow ports through firewall
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+        comment: "Todo Task Manager - {{ item }}"
+      loop:
+        - "80"
+        - "3000"
+        - "5000"
+
+    - name: Get server public IP
+      set_fact:
+        server_ip: "{{ ansible_default_ipv4.address }}"
+      tags:
+        - deploy
+
+    - name: Display deployment information
+      debug:
+        msg: "Deployment completed! Frontend: http://{{ server_ip }}:3000 or http://{{ server_ip }}, Backend API: http://{{ server_ip }}:5000"
+
