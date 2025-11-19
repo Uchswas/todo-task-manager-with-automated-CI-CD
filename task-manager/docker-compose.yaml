@@ -3,11 +3,11 @@ services:
     image: postgres:15
     container_name: todo-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-todo_app_dev}
-      POSTGRES_USER: ${POSTGRES_USER:-todo_user}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,11 +22,30 @@ services:
     volumes:
       - .:/app                     
     environment:
-      PGHOST: db
-      PGUSER: ${POSTGRES_USER:-todo_user}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: ${POSTGRES_DB:-todo_app_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      DB_HOST: db
     command: ["bash", "./scripts/setup-database.sh", "dev"]
+
+  db-setup-test:
+    image: postgres:15              
+    depends_on:
+      db:
+        condition: service_healthy
+      db-setup:
+        condition: service_completed_successfully
+    working_dir: /app
+    volumes:
+      - .:/app                     
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_TEST_DB}
+      DB_USER: ${POSTGRES_TEST_USER}
+      DB_PASSWORD: ${POSTGRES_TEST_PASSWORD}
+      DB_HOST: db
+    command: ["bash", "./scripts/setup-database.sh", "test"]
 
   backend:
     build: ./backend
@@ -35,16 +54,21 @@ services:
         condition: service_healthy
       db-setup:
         condition: service_completed_successfully
+      db-setup-test:
+        condition: service_completed_successfully
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      TEST_DATABASE_URL: ${TEST_DATABASE_URL}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      TEST_DATABASE_URL: postgresql://${POSTGRES_TEST_USER}:${POSTGRES_TEST_PASSWORD}@db:5432/${POSTGRES_TEST_DB}
       SECRET_KEY: ${SECRET_KEY}
       JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
-      FLASK_ENV: ${FLASK_ENV:-development}
-      FLASK_APP: ${FLASK_APP:-run.py}
-      SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:-false}
-      TASKS_PER_PAGE: ${TASKS_PER_PAGE:-50}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      FLASK_ENV: ${FLASK_ENV}
+      FLASK_APP: ${FLASK_APP}
+      SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO}
+      TASKS_PER_PAGE: ${TASKS_PER_PAGE}
     ports:
       - "5000:5000"
 
@@ -53,6 +77,6 @@ services:
     depends_on:
       - backend
     environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5000}
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
     ports:
       - "3000:3000"
