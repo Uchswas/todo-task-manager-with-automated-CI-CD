@@ -23,13 +23,29 @@ jobs:
           # Write SSH private key, preserving newlines
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          # Add server to known_hosts
-          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-          # Verify key format
-          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
-            echo "Error: SSH private key is invalid or empty"
+          
+          # Check if key file is empty
+          if [ ! -s ~/.ssh/id_rsa ]; then
+            echo "Error: SSH private key is EMPTY - SSH_PRIVATE_KEY secret is not set or is empty"
             exit 1
           fi
+          
+          # Check if key file is too small (likely empty or truncated)
+          if [ $(wc -c < ~/.ssh/id_rsa) -lt 100 ]; then
+            echo "Error: SSH private key is too small (likely EMPTY or truncated)"
+            exit 1
+          fi
+          
+          # Verify key format
+          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+            echo "Error: SSH private key is INVALID - key format is incorrect"
+            echo "Key should start with: -----BEGIN OPENSSH PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY-----"
+            exit 1
+          fi
+          
+          # Add server to known_hosts
+          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "SSH key validated successfully"
 
       - name: Install Ansible
         run: |
