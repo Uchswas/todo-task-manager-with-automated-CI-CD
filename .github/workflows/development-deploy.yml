@@ -39,11 +39,26 @@ jobs:
             echo "✓ SSH port 22 is accessible"
           else
             echo "✗ SSH port 22 is NOT accessible"
-            echo "Possible causes:"
-            echo "  - Firewall blocking port 22"
-            echo "  - Network routing issue"
-            echo "  - Target server is down"
+            echo ""
+            echo "Troubleshooting steps:"
+            echo "1. On the target server (152.7.177.202), run:"
+            echo "   sudo systemctl status ssh"
+            echo "   sudo netstat -tlnp | grep :22"
+            echo ""
+            echo "2. Check if SSH is listening on all interfaces (0.0.0.0:22)"
+            echo ""
+            echo "3. Try connecting manually from runner:"
+            echo "   ssh -v ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}"
+            echo ""
+            echo "4. Check cloud provider firewall/security groups"
+            echo "   - Allow port 22 from runner IP: $(hostname -I | awk '{print $1}')"
+            echo ""
+            echo "5. If using VCL, check network isolation settings"
           fi
+          
+          echo ""
+          echo "Attempting manual SSH connection test..."
+          ssh -v -o ConnectTimeout=5 -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} echo "Connection successful" 2>&1 || echo "Connection failed - see verbose output above"
 
       - name: Check if Ansible is installed
         id: check_ansible
