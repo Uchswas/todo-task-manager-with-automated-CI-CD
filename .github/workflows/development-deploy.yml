@@ -16,12 +16,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Print deployment target info
-        run: |
-          echo "Deployment Target:"
-          echo "  IP Address: ${{ vars.SSH_HOST }}"
-          echo "  Username: ${{ vars.SSH_USER }}"
-
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -29,6 +23,27 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Test connectivity to target server
+        run: |
+          echo "Testing connectivity to ${{ vars.SSH_HOST }}..."
+          echo "Runner IP: $(hostname -I | awk '{print $1}')"
+          if ping -c 2 -W 3 ${{ vars.SSH_HOST }} &> /dev/null; then
+            echo "✓ Host is reachable via ping"
+          else
+            echo "✗ Host is NOT reachable via ping - network issue"
+          fi
+          
+          echo "Testing SSH port 22..."
+          if timeout 3 bash -c "cat < /dev/null > /dev/tcp/${{ vars.SSH_HOST }}/22" 2>/dev/null; then
+            echo "✓ SSH port 22 is accessible"
+          else
+            echo "✗ SSH port 22 is NOT accessible"
+            echo "Possible causes:"
+            echo "  - Firewall blocking port 22"
+            echo "  - Network routing issue"
+            echo "  - Target server is down"
+          fi
 
       - name: Check if Ansible is installed
         id: check_ansible
