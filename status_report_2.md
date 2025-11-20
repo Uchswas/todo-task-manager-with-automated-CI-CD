@@ -27,6 +27,22 @@
 ---
 
 ### Uchswas Paul
+**Secret and Code Management (single .env)** ([commit 18942a4](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/18942a47ae0ae412461e879fdfd742bc5e20502a), [commit c6e81d6](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/c6e81d60652a8420e8f8db61a81376835e8ffc4a), [commit f8cd34d](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/f8cd34db1ef99db2c39583bbd4d20e2e61a9c553))
+- Removed hard-coded secrets from the codebase and legacy setup scripts.
+- Consolidated multiple .env files into a single environment file.
+- Migrated project setup from custom .sh scripts to a Docker-based workflow.
+
+**Ansible Configuration** ([commit beac25f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/commits/beac25f54a06f53726d66692e61b5724f8f02f41))
+- Added Ansible configuration for deploying the project to the server.
+- Use Ansible to install Docker and Nginx, manage secrets, and run Docker containers.
+
+**Automated Deployment Workflow** ([commit 022a7f7](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/022a7f731c639ffb4ac150aa72970e638a99dc62))
+- Added a GitHub Actions workflow to deploy to the development server whenever code is pushed to the dev branch.
+- GitHub Environments for Secrets & Variables
+
+**GitHub Environments**
+- Created development and production environments in GitHub
+- Added variables and secrets to these environments to enable the CI/CD pipeline to deploy the project.
 
 ---
 
