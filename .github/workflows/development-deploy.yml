@@ -16,6 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Print deployment target info
+        run: |
+          echo "Deployment Target:"
+          echo "  IP Address: ${{ vars.SSH_HOST }}"
+          echo "  Username: ${{ vars.SSH_USER }}"
+
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
