@@ -47,10 +47,25 @@ jobs:
           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           echo "SSH key validated successfully"
 
-      - name: Install Ansible
+      - name: Check if Ansible is installed
+        id: check_ansible
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible
+          if command -v ansible-playbook &> /dev/null; then
+            echo "installed=true" >> $GITHUB_OUTPUT
+            ansible-playbook --version
+          else
+            echo "installed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Ansible (if not installed)
+        if: steps.check_ansible.outputs.installed == 'false'
+        run: |
+          # Try installing with pip (user install, no sudo needed)
+          python3 -m pip install --user ansible
+          # Add user pip bin to PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Verify installation
+          ~/.local/bin/ansible-playbook --version || python3 -m pip show ansible
 
       - name: Create host.yaml file
         run: |
@@ -90,6 +105,7 @@ jobs:
       - name: Deploy with Ansible
         run: |
           cd ansible
+          # Use ansible-playbook from PATH (system or user install)
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
 
 
