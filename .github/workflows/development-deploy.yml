@@ -34,19 +34,20 @@ jobs:
             echo "installed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up Python virtual environment for Ansible
+      - name: Install Ansible (if not installed)
         if: steps.check_ansible.outputs.installed == 'false'
         run: |
-          # Create virtual environment for Ansible
-          python3 -m venv ~/ansible-venv
-          # Activate and install Ansible
-          source ~/ansible-venv/bin/activate
-          pip install --upgrade pip
-          pip install ansible
-          # Add venv bin to PATH for subsequent steps
-          echo "$HOME/ansible-venv/bin" >> $GITHUB_PATH
+          # Install pip if not available
+          if ! python3 -m pip --version &> /dev/null; then
+            curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+            python3 /tmp/get-pip.py --user --break-system-packages
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          fi
+          # Install Ansible using --break-system-packages (self-hosted runner)
+          python3 -m pip install --user --break-system-packages ansible
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           # Verify installation
-          ~/ansible-venv/bin/ansible-playbook --version
+          ~/.local/bin/ansible-playbook --version || ansible-playbook --version
 
       - name: Create host.yaml file
         run: |
@@ -86,11 +87,6 @@ jobs:
       - name: Deploy with Ansible
         run: |
           cd ansible
-          # Use ansible-playbook from PATH (system, user install, or venv)
-          # Activate venv if it exists (for user installs)
-          if [ -f ~/ansible-venv/bin/activate ]; then
-            source ~/ansible-venv/bin/activate
-          fi
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
 
 
