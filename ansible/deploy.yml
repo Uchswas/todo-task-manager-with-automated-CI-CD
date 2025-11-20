@@ -159,15 +159,15 @@
         mode: '0755'
         recurse: yes
 
-    - name: Ensure .env file exists
-      stat:
-        path: "{{ app_dir }}/task-manager/.env"
-      register: env_file
-
-    - name: Warn if .env file is missing
-      debug:
-        msg: "WARNING: .env file not found. Please create it manually with all required environment variables before starting containers."
-      when: not env_file.stat.exists
+    - name: Copy .env file to server
+      copy:
+        src: "{{ playbook_dir }}/.env"
+        dest: "{{ app_dir }}/task-manager/.env"
+        mode: '0600'
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+      tags:
+        - deploy
 
     - name: Ensure Docker Compose is available
       command: docker compose version

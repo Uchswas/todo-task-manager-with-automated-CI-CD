@@ -1,0 +1,72 @@
+name: Deploy to Development
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    name: Deploy to Development Server
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Create host.yaml file
+        run: |
+          cat > ansible/host.yaml << EOF
+          [development]
+          ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
+          EOF
+
+      - name: Create .env file
+        run: |
+          cat > ansible/.env << EOF
+          # Database Configuration
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_TEST_DB=${{ secrets.POSTGRES_TEST_DB }}
+          POSTGRES_TEST_USER=${{ secrets.POSTGRES_TEST_USER }}
+          POSTGRES_TEST_PASSWORD=${{ secrets.POSTGRES_TEST_PASSWORD }}
+
+          # Security Secrets
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+          # Flask Configuration
+          FLASK_ENV=${{ vars.FLASK_ENV }}
+          FLASK_APP=${{ vars.FLASK_APP }}
+          SQLALCHEMY_ECHO=${{ vars.SQLALCHEMY_ECHO }}
+          TASKS_PER_PAGE=${{ vars.TASKS_PER_PAGE }}
+
+          # CORS Configuration
+          CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
+
+          # Frontend Configuration
+          REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}
+          EOF
+
+      - name: Deploy with Ansible
+        run: |
+          cd ansible
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
+        env:
+          ANSIBLE_PRIVATE_KEY_FILE: ~/.ssh/id_rsa
+
