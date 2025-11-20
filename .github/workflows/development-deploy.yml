@@ -19,9 +19,17 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+          # Write SSH private key, preserving newlines
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts
+          # Add server to known_hosts
+          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          # Verify key format
+          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+            echo "Error: SSH private key is invalid or empty"
+            exit 1
+          fi
 
       - name: Install Ansible
         run: |
@@ -67,6 +75,4 @@ jobs:
         run: |
           cd ansible
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
-        env:
-          ANSIBLE_PRIVATE_KEY_FILE: ~/.ssh/id_rsa
 
