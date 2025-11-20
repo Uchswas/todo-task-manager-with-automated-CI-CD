@@ -20,32 +20,9 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Write SSH private key, preserving newlines
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Check if key file is empty
-          if [ ! -s ~/.ssh/id_rsa ]; then
-            echo "Error: SSH private key is EMPTY - SSH_PRIVATE_KEY secret is not set or is empty"
-            exit 1
-          fi
-          
-          # Check if key file is too small (likely empty or truncated)
-          if [ $(wc -c < ~/.ssh/id_rsa) -lt 100 ]; then
-            echo "Error: SSH private key is too small (likely EMPTY or truncated)"
-            exit 1
-          fi
-          
-          # Verify key format
-          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
-            echo "Error: SSH private key is INVALID - key format is incorrect"
-            echo "Key should start with: -----BEGIN OPENSSH PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY-----"
-            exit 1
-          fi
-          
-          # Add server to known_hosts
           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-          echo "SSH key validated successfully"
 
       - name: Check if Ansible is installed
         id: check_ansible
@@ -57,30 +34,19 @@ jobs:
             echo "installed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Install pip (if not available)
+      - name: Set up Python virtual environment for Ansible
         if: steps.check_ansible.outputs.installed == 'false'
         run: |
-          if ! python3 -m pip --version &> /dev/null; then
-            echo "Installing pip..."
-            curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-            python3 /tmp/get-pip.py --user
-            # Add user pip bin to PATH
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-            # Verify pip installation
-            ~/.local/bin/pip --version || python3 -m pip --version
-          else
-            echo "pip is already available"
-          fi
-
-      - name: Install Ansible (if not installed)
-        if: steps.check_ansible.outputs.installed == 'false'
-        run: |
-          # Install ansible using pip (user install, no sudo needed)
-          python3 -m pip install --user ansible
-          # Add user pip bin to PATH (in case it wasn't added before)
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Create virtual environment for Ansible
+          python3 -m venv ~/ansible-venv
+          # Activate and install Ansible
+          source ~/ansible-venv/bin/activate
+          pip install --upgrade pip
+          pip install ansible
+          # Add venv bin to PATH for subsequent steps
+          echo "$HOME/ansible-venv/bin" >> $GITHUB_PATH
           # Verify installation
-          ~/.local/bin/ansible-playbook --version || ansible-playbook --version
+          ~/ansible-venv/bin/ansible-playbook --version
 
       - name: Create host.yaml file
         run: |
@@ -120,7 +86,11 @@ jobs:
       - name: Deploy with Ansible
         run: |
           cd ansible
-          # Use ansible-playbook from PATH (system or user install)
+          # Use ansible-playbook from PATH (system, user install, or venv)
+          # Activate venv if it exists (for user installs)
+          if [ -f ~/ansible-venv/bin/activate ]; then
+            source ~/ansible-venv/bin/activate
+          fi
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
 
 

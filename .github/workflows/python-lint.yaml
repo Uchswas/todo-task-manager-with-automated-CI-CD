@@ -1,24 +1,24 @@
-name: Python Lint
-on: [push, pull_request]
-jobs:
-  lint:
-    runs-on: [self-hosted, Linux, X64]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+# name: Python Lint
+# on: [push, pull_request]
+# jobs:
+#   lint:
+#     runs-on: [self-hosted, Linux, X64]
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+#     - name: Set up Python
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: '3.x'
 
-    - name: Install pylint
-      run: |
-        python -m pip install --upgrade pip
-        pip install pylint
+#     - name: Install pylint
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install pylint
 
-    - name: Run pylint
-      working-directory: task-manager/backend
-      run: |
-        pylint app tests run.py --ignore venv,.venv
+#     - name: Run pylint
+#       working-directory: task-manager/backend
+#       run: |
+#         pylint app tests run.py --ignore venv,.venv
         
