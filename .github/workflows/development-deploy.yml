@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     name: Deploy to Development Server
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     environment: development
     
     steps:
