@@ -65,7 +65,6 @@ Moreover, our deployment and configuration process is now much more secure, cons
 | Implement changelog generation from commit history | Uchswas Paul | 0.5 day |
 | Create workflow that triggers on PR merge to release/* branches | Uchswas Paul | 1 day |
 | Create workflow to run tests like unit tests, e2e tests | Uchswas Paul | 0.5 day |
-| Add workflows to mimic the proposed pipeline | Uchswas Paul | 1 day |
 | Test Full pipeline | Uchswas Paul | 1 day |
 
 ---
