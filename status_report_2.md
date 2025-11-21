@@ -38,7 +38,6 @@
 
 **Automated Deployment Workflow** ([commit 022a7f7](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/022a7f731c639ffb4ac150aa72970e638a99dc62))
 - Added a GitHub Actions workflow to deploy to the development server whenever code is pushed to the dev branch.
-- GitHub Environments for Secrets & Variables
 
 **GitHub Environments**
 - Created development and production environments in GitHub
