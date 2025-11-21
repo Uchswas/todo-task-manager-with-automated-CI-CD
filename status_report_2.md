@@ -49,7 +49,7 @@
 
 Our testing now includes very thorough E2E test coverage for different application flows (auth, dashboard, tasks, and categories). This is accomplished using Playwright scripts that run on headless or headed mode on Chrome, Firefox, and Safari. This give us higher confidence of our application and that no regression is happening.
 
-Moreover, our deployment and configuration process is now much more secure, consistent, and maintainable. Centralizing configuration into a single .env file makes it  easier to manage and maintain. Moving secrets into GitHub environments and removing hard-coded secrets from the codebase and scripts, reducing security risk and configuration drift. The new Ansible playbooks and GitHub Actions workflow provide a repeatable, automated path to deploy Dockerized services to our servers, which will shorten the release time.
+Moreover, our deployment and configuration process is now much more secure, consistent, and maintainable. Centralizing configuration into a single .env file makes it  easier to manage and maintain. Moving secrets into GitHub environments and removing hard-coded secrets from the codebase and scripts reduces security risk and configuration drift. The new Ansible playbooks and GitHub Actions workflow provide a repeatable and automated path to deploy Dockerized services to our servers, which will shorten the release time.
 
 ---
 
@@ -60,12 +60,10 @@ Moreover, our deployment and configuration process is now much more secure, cons
 | Create workflow that triggers on PR merge to `release/*` branches | Ahmed Elgendy | 1 day |
 | Implement changelog generation from commit history | Ahmed Elgendy | 1 day |
 | Add functionality to create PR to main with changelog | Ahmed Elgendy | 1 day |
-| Test release workflow end-to-end | Ahmed Elgendy | 1 day |
 | Provision and setup Google Cloud Service | Uchswas Paul| 1 day |
-| Implement changelog generation from commit history | Uchswas Paul | 0.5 day |
-| Create workflow that triggers on PR merge to release/* branches | Uchswas Paul | 1 day |
+| Create Ansible playbook for test and production environment setup | Uchswas Paul | 1 day |
 | Create workflow to run tests like unit tests, e2e tests | Uchswas Paul | 0.5 day |
-| Test Full pipeline | Uchswas Paul | 1 day |
+| Test full pipeline | Uchswas Paul | 1 day |
 
 ---
 
