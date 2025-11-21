@@ -76,10 +76,11 @@ Moreover, our deployment and configuration process is now much more secure, cons
 - Detailed Playwright docs made the E2E setup straightforward.
 - We kept collaboration smooth through GitHub Issues and branching.
 - The branching strategy still prevented conflicts and let us develop in parallel.
+- The refactored code worked really well without giving much of headaches.
 
 ### What Didn’t Work Well
 
-- VCL only lets the person who provisioned the VM connect, and they must stay on the same Wi‑Fi/mobile network or the firewall blocks SSH, so using VCL isn’t an option.
+- VCL only lets the person who provisioned the VM connect, and they must stay on the same Wi‑Fi/mobile network, or the firewall blocks SSH, so using VCL isn’t an option. The runner couldn't connect with the development server while trying to deploy
 - Some Playwright suites were flaky and tough to debug because of parallelism.
 
 ### What We’ll Do Differently
