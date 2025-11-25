@@ -8,6 +8,20 @@
     docker_compose_version: "2.24.0"
     
   tasks:
+    - name: Set Docker repository variables
+      set_fact:
+        docker_repo_id: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
+        docker_repo_codename: "{{ ansible_distribution_release | lower | default('stable') }}"
+
+    - name: Remove existing Docker repository configuration
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/docker.list
+        - /etc/apt/keyrings/docker.gpg
+      ignore_errors: yes
+
     - name: Update apt cache
       apt:
         update_cache: yes
@@ -26,11 +40,6 @@
           - lsb-release
         state: present
 
-    - name: Set Docker repository variables
-      set_fact:
-        docker_repo_id: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
-        docker_repo_codename: "{{ ansible_distribution_release | lower | default('stable') }}"
-
     - name: Install Docker using official method
       shell: |
         install -m 0755 -d /etc/apt/keyrings
@@ -38,8 +47,6 @@
         chmod a+r /etc/apt/keyrings/docker.gpg
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ docker_repo_id }} {{ docker_repo_codename }} stable" \
           | tee /etc/apt/sources.list.d/docker.list > /dev/null
-      args:
-        creates: /etc/apt/keyrings/docker.gpg
 
     - name: Update apt cache
       apt:
