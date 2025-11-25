@@ -15,7 +15,7 @@ jobs:
         POSTGRES_TEST_USER: ${{ secrets.POSTGRES_TEST_USER }}
         POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
       run: |
-        docker run -d \
+        sudo docker run -d \
           --name test-postgres \
           -e POSTGRES_DB=${POSTGRES_TEST_DB} \
           -e POSTGRES_USER=${POSTGRES_TEST_USER} \
@@ -76,6 +76,6 @@ jobs:
     - name: Clean up PostgreSQL container
       if: always()
       run: |
-        docker stop test-postgres || true
-        docker rm test-postgres || true
+        sudo docker stop test-postgres || true
+        sudo docker rm test-postgres || true
 
