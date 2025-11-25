@@ -8,6 +8,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install PostgreSQL development libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev postgresql-client
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
