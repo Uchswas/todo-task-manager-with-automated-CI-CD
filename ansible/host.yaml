@@ -1,5 +1,5 @@
 [development]
 34.75.137.53 ansible_user=upaul ansible_python_interpreter=/usr/bin/python3
 
-[production]
-152.7.177.225 ansible_user=upaul ansible_python_interpreter=/usr/bin/python3
+# [production]
+# 152.7.177.225 ansible_user=upaul ansible_python_interpreter=/usr/bin/python3
