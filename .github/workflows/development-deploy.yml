@@ -20,14 +20,11 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-            printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          elif [ -f ~/.ssh/gcp_key ]; then
-            cp ~/.ssh/gcp_key ~/.ssh/id_rsa
-          else
-            echo "SSH private key not found. Set secrets.SSH_PRIVATE_KEY or place ~/.ssh/gcp_key." >&2
+          if [ ! -f ~/.ssh/gcp_key ]; then
+            echo "Private key (~/.ssh/gcp_key) not found on runner. Please install it before running this job." >&2
             exit 1
           fi
+          cp ~/.ssh/gcp_key ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
