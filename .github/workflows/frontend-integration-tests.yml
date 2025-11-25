@@ -1,0 +1,25 @@
+name: Frontend Integration Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: task-manager/frontend
+      run: |
+        npm install
+
+    - name: Run integration tests
+      working-directory: task-manager/frontend
+      run: |
+        npm run test:integration
+
