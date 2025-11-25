@@ -214,6 +214,18 @@
         name: ufw
         state: present
 
+    - name: Allow SSH port before enabling UFW
+      ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        comment: "SSH access"
+
+    - name: Enable UFW firewall
+      ufw:
+        state: enabled
+        policy: deny
+
     - name: Allow ports through firewall
       ufw:
         rule: allow
