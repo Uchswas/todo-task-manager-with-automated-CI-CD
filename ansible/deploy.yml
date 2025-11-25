@@ -26,12 +26,18 @@
           - lsb-release
         state: present
 
+    - name: Set Docker repository variables
+      set_fact:
+        docker_repo_id: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
+        docker_repo_codename: "{{ ansible_distribution_release | lower | default('stable') }}"
+
     - name: Install Docker using official method
       shell: |
         install -m 0755 -d /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        curl -fsSL https://download.docker.com/linux/{{ docker_repo_id }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
         chmod a+r /etc/apt/keyrings/docker.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ docker_repo_id }} {{ docker_repo_codename }} stable" \
+          | tee /etc/apt/sources.list.d/docker.list > /dev/null
       args:
         creates: /etc/apt/keyrings/docker.gpg
 
