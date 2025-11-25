@@ -20,45 +20,16 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          elif [ -f ~/.ssh/gcp_key ]; then
+            cp ~/.ssh/gcp_key ~/.ssh/id_rsa
+          else
+            echo "SSH private key not found. Set secrets.SSH_PRIVATE_KEY or place ~/.ssh/gcp_key." >&2
+            exit 1
+          fi
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Test connectivity to target server
-        run: |
-          echo "Testing connectivity to ${{ vars.SSH_HOST }}..."
-          echo "Runner IP: $(hostname -I | awk '{print $1}')"
-          if ping -c 2 -W 3 ${{ vars.SSH_HOST }} &> /dev/null; then
-            echo "✓ Host is reachable via ping"
-          else
-            echo "✗ Host is NOT reachable via ping - network issue"
-          fi
-          
-          echo "Testing SSH port 22..."
-          if timeout 3 bash -c "cat < /dev/null > /dev/tcp/${{ vars.SSH_HOST }}/22" 2>/dev/null; then
-            echo "✓ SSH port 22 is accessible"
-          else
-            echo "✗ SSH port 22 is NOT accessible"
-            echo ""
-            echo "Troubleshooting steps:"
-            echo "1. On the target server (152.7.177.202), run:"
-            echo "   sudo systemctl status ssh"
-            echo "   sudo netstat -tlnp | grep :22"
-            echo ""
-            echo "2. Check if SSH is listening on all interfaces (0.0.0.0:22)"
-            echo ""
-            echo "3. Try connecting manually from runner:"
-            echo "   ssh -v ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}"
-            echo ""
-            echo "4. Check cloud provider firewall/security groups"
-            echo "   - Allow port 22 from runner IP: $(hostname -I | awk '{print $1}')"
-            echo ""
-            echo "5. If using VCL, check network isolation settings"
-          fi
-          
-          echo ""
-          echo "Attempting manual SSH connection test..."
-          ssh -v -o ConnectTimeout=5 -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} echo "Connection successful" 2>&1 || echo "Connection failed - see verbose output above"
 
       - name: Check if Ansible is installed
         id: check_ansible
