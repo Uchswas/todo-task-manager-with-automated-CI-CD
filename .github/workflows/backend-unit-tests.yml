@@ -4,6 +4,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: [self-hosted, Linux, X64]
+    environment: development
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -33,7 +34,21 @@ jobs:
 
     - name: Run unit tests
       working-directory: task-manager/backend
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+        SQLALCHEMY_ECHO: ${{ vars.SQLALCHEMY_ECHO }}
+        TASKS_PER_PAGE: ${{ vars.TASKS_PER_PAGE }}
       run: |
+        # Set defaults if secrets/vars are not available
+        export SECRET_KEY="${SECRET_KEY:-unit-test-secret-key}"
+        export JWT_SECRET="${JWT_SECRET:-unit-test-jwt-secret}"
+        export DATABASE_URL="${DATABASE_URL:-postgresql://dummy:dummy@localhost:5432/dummy}"
+        export CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:3000}"
+        export SQLALCHEMY_ECHO="${SQLALCHEMY_ECHO:-false}"
+        export TASKS_PER_PAGE="${TASKS_PER_PAGE:-50}"
         source venv/bin/activate
         pytest tests/unit -v
 
