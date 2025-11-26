@@ -64,12 +64,29 @@ jobs:
           echo "Generated changelog:"
           cat changelog.md
 
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.version.outputs.new_tag }}" -m "${{ steps.version.outputs.new_tag }}"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin "${{ steps.version.outputs.new_tag }}"
+
       - name: Create GitHub Release with tag and changelog
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.new_tag }}
-          name: ${{ steps.version.outputs.new_tag }}
-          body_path: changelog.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.new_tag }}"
+          
+          # Escape JSON using Python
+          CHANGELOG_JSON=$(python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))" < changelog.md)
+          
+          # Create release via GitHub API
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases \
+            -d "{
+              \"tag_name\": \"$TAG\",
+              \"name\": \"$TAG\",
+              \"body\": $CHANGELOG_JSON
+            }"
           
