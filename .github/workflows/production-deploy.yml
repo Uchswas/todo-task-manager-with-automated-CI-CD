@@ -1,23 +1,23 @@
-name: Deploy to Development
+name: Deploy to Production
 
 on:
   workflow_dispatch:
   pull_request:
     types: [closed]
     branches:
-      - dev
+      - main
 
 jobs:
   deploy:
-    name: Deploy to Development Server
+    name: Deploy to Production Server
     runs-on: [self-hosted, Linux, X64]
-    environment: development
+    environment: production
     if: github.event.pull_request.merged == true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: main
 
       - name: Set up SSH
         run: |
@@ -59,7 +59,7 @@ jobs:
       - name: Create host.yaml file
         run: |
           cat > ansible/host.yaml << EOF
-          [development]
+          [production]
           ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
           EOF
 
@@ -94,9 +94,5 @@ jobs:
       - name: Deploy with Ansible
         run: |
           cd ansible
-          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
-
-
-
-
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit production --private-key ~/.ssh/id_rsa
 
