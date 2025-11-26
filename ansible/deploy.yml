@@ -194,6 +194,13 @@
         chdir: "{{ app_dir }}/task-manager"
       ignore_errors: yes
 
+    - name: Clean Docker build cache (fix BuildKit cache corruption)
+      shell: |
+        docker builder prune -af || true
+      ignore_errors: yes
+      tags:
+        - deploy
+
     - name: Build and start containers
       shell: docker compose up -d --build --pull always
       args:
