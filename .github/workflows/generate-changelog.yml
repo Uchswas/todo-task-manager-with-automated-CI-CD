@@ -7,8 +7,8 @@ on:
       - release
 
 permissions:
-  contents: write    
-  
+  contents: write
+
 jobs:
   release:
     runs-on: self-hosted
@@ -19,13 +19,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: release
-          fetch-depth: 0   
+          fetch-depth: 0
 
       - name: Get last tag
         id: last_tag
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+          echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Compute next version (patch bump)
         id: version
@@ -41,7 +41,7 @@ jobs:
             PAT=$((PAT+1))
             NEW="release-$MAJ.$MIN.$PAT"
           fi
-          echo "new_tag=$NEW" >> $GITHUB_OUTPUT
+          echo "new_tag=$NEW" >> "$GITHUB_OUTPUT"
           echo "Next tag: $NEW"
 
       - name: Generate changelog
@@ -49,46 +49,57 @@ jobs:
         run: |
           LAST="${{ steps.last_tag.outputs.last_tag }}"
           NEW="${{ steps.version.outputs.new_tag }}"
-          echo "# Changelog for $NEW" > changelog.md
-          echo >> changelog.md
 
-          if [ -z "$LAST" ]; then
-            echo "Initial release." >> changelog.md
-            echo >> changelog.md
-            git log --oneline >> changelog.md
-          else
-            echo "Changes since $LAST:" >> changelog.md
-            echo >> changelog.md
-            git log "$LAST"..HEAD --oneline >> changelog.md
-          fi
+          {
+            echo "# Changelog for $NEW"
+            echo
+
+            if [ -z "$LAST" ]; then
+              echo "Initial release."
+              echo
+              git log --oneline
+            else
+              echo "Changes since $LAST:"
+              echo
+              git log "$LAST"..HEAD --oneline
+            fi
+          } > changelog.md
 
           echo "Generated changelog:"
           cat changelog.md
 
       - name: Create GitHub Release with tag and changelog
         env:
-          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if [ -z "$GIT_TOKEN" ]; then
-            echo "Error: GIT_TOKEN secret is not set. Please add your Personal Access Token (PAT) as a secret named GIT_TOKEN."
-            exit 1
-          fi
-          
           TAG="${{ steps.version.outputs.new_tag }}"
           COMMIT_SHA="${{ github.sha }}"
-          
-          # Escape JSON using Python
+
+          # Escape changelog as JSON-safe string
           CHANGELOG_JSON=$(python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))" < changelog.md)
-          
-          # Create release via GitHub API (tag will be created automatically)
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${GIT_TOKEN}" \
-            https://api.github.com/repos/${{ github.repository }}/releases \
+
+          API_URL="https://api.github.com/repos/${{ github.repository }}/releases"
+
+          echo "Creating release $TAG for commit $COMMIT_SHA via $API_URL"
+
+          # Call GitHub Releases API
+          HTTP_STATUS=$(curl -sSL -w "%{http_code}" -o /tmp/release.json \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            "$API_URL" \
             -d "{
               \"tag_name\": \"$TAG\",
               \"target_commitish\": \"$COMMIT_SHA\",
               \"name\": \"$TAG\",
               \"body\": $CHANGELOG_JSON
-            }"
-          
+            }")
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "Release created successfully:"
+            cat /tmp/release.json
+          else
+            echo "Failed to create release. HTTP status: $HTTP_STATUS"
+            cat /tmp/release.json
+            exit 1
+          fi
