@@ -1,95 +1,95 @@
-# name: Deploy to Production
+name: Deploy to Production
 
-# on:
-#   workflow_dispatch:
-#   push:
-#     branches:
-#       - main
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
-# jobs:
-#   deploy:
-#     name: Deploy to Production Server
-#     runs-on: [self-hosted, Linux, X64]
-#     environment: production
+jobs:
+  deploy:
+    name: Deploy to Production Server
+    runs-on: [self-hosted, Linux, X64]
+    environment: production
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Set up SSH
-#         run: |
-#           mkdir -p ~/.ssh
-#           chmod 700 ~/.ssh
-#           if [ ! -f ~/.ssh/gcp_key ]; then
-#             echo "Private key (~/.ssh/gcp_key) not found on runner. Please install it before running this job." >&2
-#             exit 1
-#           fi
-#           cp ~/.ssh/gcp_key ~/.ssh/id_rsa
-#           chmod 600 ~/.ssh/id_rsa
-#           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          if [ ! -f ~/.ssh/gcp_key ]; then
+            echo "Private key (~/.ssh/gcp_key) not found on runner. Please install it before running this job." >&2
+            exit 1
+          fi
+          cp ~/.ssh/gcp_key ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-#       - name: Check if Ansible is installed
-#         id: check_ansible
-#         run: |
-#           if command -v ansible-playbook &> /dev/null; then
-#             echo "installed=true" >> $GITHUB_OUTPUT
-#             ansible-playbook --version
-#           else
-#             echo "installed=false" >> $GITHUB_OUTPUT
-#           fi
+      - name: Check if Ansible is installed
+        id: check_ansible
+        run: |
+          if command -v ansible-playbook &> /dev/null; then
+            echo "installed=true" >> $GITHUB_OUTPUT
+            ansible-playbook --version
+          else
+            echo "installed=false" >> $GITHUB_OUTPUT
+          fi
 
-#       - name: Install Ansible (if not installed)
-#         if: steps.check_ansible.outputs.installed == 'false'
-#         run: |
-#           # Install pip if not available
-#           if ! python3 -m pip --version &> /dev/null; then
-#             curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-#             python3 /tmp/get-pip.py --user --break-system-packages
-#             echo "$HOME/.local/bin" >> $GITHUB_PATH
-#           fi
-#           # Install Ansible using --break-system-packages (self-hosted runner)
-#           python3 -m pip install --user --break-system-packages ansible
-#           echo "$HOME/.local/bin" >> $GITHUB_PATH
-#           # Verify installation
-#           ~/.local/bin/ansible-playbook --version || ansible-playbook --version
+      - name: Install Ansible (if not installed)
+        if: steps.check_ansible.outputs.installed == 'false'
+        run: |
+          # Install pip if not available
+          if ! python3 -m pip --version &> /dev/null; then
+            curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+            python3 /tmp/get-pip.py --user --break-system-packages
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          fi
+          # Install Ansible using --break-system-packages (self-hosted runner)
+          python3 -m pip install --user --break-system-packages ansible
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Verify installation
+          ~/.local/bin/ansible-playbook --version || ansible-playbook --version
 
-#       - name: Create host.yaml file
-#         run: |
-#           cat > ansible/host.yaml << EOF
-#           [production]
-#           ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
-#           EOF
+      - name: Create host.yaml file
+        run: |
+          cat > ansible/host.yaml << EOF
+          [production]
+          ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
+          EOF
 
-#       - name: Create .env file
-#         run: |
-#           cat > ansible/.env << EOF
-#           # Database Configuration
-#           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-#           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-#           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-#           POSTGRES_TEST_DB=${{ secrets.POSTGRES_TEST_DB }}
-#           POSTGRES_TEST_USER=${{ secrets.POSTGRES_TEST_USER }}
-#           POSTGRES_TEST_PASSWORD=${{ secrets.POSTGRES_TEST_PASSWORD }}
+      - name: Create .env file
+        run: |
+          cat > ansible/.env << EOF
+          # Database Configuration
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_TEST_DB=${{ secrets.POSTGRES_TEST_DB }}
+          POSTGRES_TEST_USER=${{ secrets.POSTGRES_TEST_USER }}
+          POSTGRES_TEST_PASSWORD=${{ secrets.POSTGRES_TEST_PASSWORD }}
 
-#           # Security Secrets
-#           SECRET_KEY=${{ secrets.SECRET_KEY }}
-#           JWT_SECRET=${{ secrets.JWT_SECRET }}
+          # Security Secrets
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
 
-#           # Flask Configuration
-#           FLASK_ENV=${{ vars.FLASK_ENV }}
-#           FLASK_APP=${{ vars.FLASK_APP }}
-#           SQLALCHEMY_ECHO=${{ vars.SQLALCHEMY_ECHO }}
-#           TASKS_PER_PAGE=${{ vars.TASKS_PER_PAGE }}
+          # Flask Configuration
+          FLASK_ENV=${{ vars.FLASK_ENV }}
+          FLASK_APP=${{ vars.FLASK_APP }}
+          SQLALCHEMY_ECHO=${{ vars.SQLALCHEMY_ECHO }}
+          TASKS_PER_PAGE=${{ vars.TASKS_PER_PAGE }}
 
-#           # CORS Configuration
-#           CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
+          # CORS Configuration
+          CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
 
-#           # Frontend Configuration
-#           REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}
-#           EOF
+          # Frontend Configuration
+          REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}
+          EOF
 
-#       - name: Deploy with Ansible
-#         run: |
-#           cd ansible
-#           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit production --private-key ~/.ssh/id_rsa
+      - name: Deploy with Ansible
+        run: |
+          cd ansible
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit production --private-key ~/.ssh/id_rsa
 

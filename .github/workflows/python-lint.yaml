@@ -1,38 +1,38 @@
-# name: Python Lint
-# on: [push, pull_request]
-# jobs:
-#   lint:
-#     runs-on: [self-hosted, Linux, X64]
-#     steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v4
+name: Python Lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-#     - name: Install PostgreSQL development libraries
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y libpq-dev postgresql-client
+    - name: Install PostgreSQL development libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev postgresql-client
 
-#     - name: Set up Python
-#       uses: actions/setup-python@v4
-#       with:
-#         python-version: '3.12'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
 
-#     - name: Create virtual environment
-#       working-directory: task-manager/backend
-#       run: |
-#         python -m venv venv
+    - name: Create virtual environment
+      working-directory: task-manager/backend
+      run: |
+        python -m venv venv
 
-#     - name: Install dependencies and pylint
-#       working-directory: task-manager/backend
-#       run: |
-#         source venv/bin/activate
-#         pip install --upgrade pip
-#         pip install -r requirements.txt
-#         pip install pylint
+    - name: Install dependencies and pylint
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint
 
-#     - name: Run pylint
-#       working-directory: task-manager/backend
-#       run: |
-#         source venv/bin/activate
-#         pylint app tests run.py --ignore venv,.venv
+    - name: Run pylint
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pylint app tests run.py --ignore venv,.venv
         

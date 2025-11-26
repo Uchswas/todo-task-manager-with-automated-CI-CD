@@ -11,7 +11,6 @@ jobs:
     name: Deploy to Development Server
     runs-on: [self-hosted, Linux, X64]
     environment: development
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
