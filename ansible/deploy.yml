@@ -237,6 +237,29 @@
         - "3000"
         - "5000"
 
+    - name: Check if GCP firewall rule for port 5000 exists
+      shell: gcloud compute firewall-rules describe allow-backend-api-5000 --format="value(name)" 2>/dev/null || echo ""
+      register: gcp_firewall_check
+      delegate_to: localhost
+      become: no
+      changed_when: false
+      failed_when: false
+      tags:
+        - deploy
+
+    - name: Create GCP firewall rule for backend API (port 5000)
+      shell: |
+        gcloud compute firewall-rules create allow-backend-api-5000 \
+          --allow tcp:5000 \
+          --source-ranges 0.0.0.0/0 \
+          --description "Allow backend API on port 5000" \
+          --direction INGRESS
+      delegate_to: localhost
+      become: no
+      when: gcp_firewall_check.stdout == ""
+      tags:
+        - deploy
+
     - name: Get server public IP
       set_fact:
         server_ip: "{{ ansible_default_ipv4.address }}"
