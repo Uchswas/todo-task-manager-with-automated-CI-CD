@@ -2,18 +2,16 @@ name: Auto Release with Changelog
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - release
 
 permissions:
   contents: write    
-
+  
 jobs:
   release:
     runs-on: self-hosted
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)   
 
     steps:
       - name: Checkout repo
