@@ -12,6 +12,7 @@ permissions:
 jobs:
   release:
     runs-on: self-hosted
+    environment: production
 
     steps:
       - name: Checkout repo
