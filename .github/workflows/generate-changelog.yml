@@ -32,10 +32,8 @@ jobs:
         run: |
           LAST="${{ steps.last_tag.outputs.last_tag }}"
           if [ -z "$LAST" ]; then
-            # no previous tag: start at release-0.0.0
             NEW="release-0.0.0"
           else
-            # assume tag format release-X.Y.Z
             VER="${LAST#release-}"
             IFS='.' read -r MAJ MIN PAT <<< "$VER"
             PAT=$((PAT+1))
@@ -45,7 +43,6 @@ jobs:
           echo "Next tag: $NEW"
 
       - name: Generate changelog
-        id: changelog
         run: |
           LAST="${{ steps.last_tag.outputs.last_tag }}"
           NEW="${{ steps.version.outputs.new_tag }}"
@@ -68,38 +65,47 @@ jobs:
           echo "Generated changelog:"
           cat changelog.md
 
+      # --- DEBUG STEP: simple GET using the same token ---
+      - name: Test GitHub API with GITHUB_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Testing /user with GITHUB_TOKEN..."
+          curl --silent --show-error --fail \
+            --request GET \
+            --url "https://api.github.com/user" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json"
+
       - name: Create GitHub Release with tag and changelog
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.version.outputs.new_tag }}"
           COMMIT_SHA="${{ github.sha }}"
 
-          # Escape changelog as JSON-safe string
+          # Escape changelog into JSON string
           CHANGELOG_JSON=$(python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))" < changelog.md)
 
           API_URL="https://api.github.com/repos/${{ github.repository }}/releases"
 
           echo "Creating release $TAG for commit $COMMIT_SHA via $API_URL"
 
-          # Call GitHub Releases API
           HTTP_STATUS=$(curl -sSL -w "%{http_code}" -o /tmp/release.json \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            "$API_URL" \
-            -d "{
+            --request POST \
+            --url "$API_URL" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --data "{
               \"tag_name\": \"$TAG\",
               \"target_commitish\": \"$COMMIT_SHA\",
               \"name\": \"$TAG\",
               \"body\": $CHANGELOG_JSON
             }")
 
-          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
-            echo "Release created successfully:"
-            cat /tmp/release.json
-          else
-            echo "Failed to create release. HTTP status: $HTTP_STATUS"
-            cat /tmp/release.json
+          echo "HTTP status: $HTTP_STATUS"
+          cat /tmp/release.json
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
             exit 1
           fi
