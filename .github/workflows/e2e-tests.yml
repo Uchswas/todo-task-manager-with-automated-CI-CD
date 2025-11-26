@@ -94,7 +94,7 @@ jobs:
       run: |
         export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
         export TEST_DATABASE_URL="postgresql://${POSTGRES_TEST_USER}:${POSTGRES_TEST_PASSWORD}@localhost:5432/${POSTGRES_TEST_DB}"
-        npm run test:e2e
+        npm run test:e2e -- --max-failures=10
 
     - name: Upload Playwright test results
       if: always()
