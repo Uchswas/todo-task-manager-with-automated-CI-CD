@@ -36,3 +36,4 @@ jobs:
         source venv/bin/activate
         pylint app tests run.py --ignore venv,.venv
         
+        
