@@ -65,30 +65,22 @@ jobs:
           echo "Generated changelog:"
           cat changelog.md
 
-      - name: Create git tag
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.version.outputs.new_tag }}" -m "${{ steps.version.outputs.new_tag }}"
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-          git push origin "${{ steps.version.outputs.new_tag }}"
-
       - name: Create GitHub Release with tag and changelog
         run: |
           TAG="${{ steps.version.outputs.new_tag }}"
+          COMMIT_SHA="${{ github.sha }}"
           
           # Escape JSON using Python
           CHANGELOG_JSON=$(python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))" < changelog.md)
           
-          # Create release via GitHub API
+          # Create release via GitHub API (tag will be created automatically)
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ github.token }}" \
             https://api.github.com/repos/${{ github.repository }}/releases \
             -d "{
               \"tag_name\": \"$TAG\",
+              \"target_commitish\": \"$COMMIT_SHA\",
               \"name\": \"$TAG\",
               \"body\": $CHANGELOG_JSON
             }"
