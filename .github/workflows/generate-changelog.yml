@@ -21,6 +21,11 @@ jobs:
           ref: release
           fetch-depth: 0
 
+      - name: Show GitHub env (debug)
+        run: |
+          echo "GITHUB_SERVER_URL=$GITHUB_SERVER_URL"
+          echo "GITHUB_API_URL=$GITHUB_API_URL"
+
       - name: Get last tag
         id: last_tag
         run: |
@@ -32,8 +37,10 @@ jobs:
         run: |
           LAST="${{ steps.last_tag.outputs.last_tag }}"
           if [ -z "$LAST" ]; then
+            # no previous tag: start at release-0.0.0
             NEW="release-0.0.0"
           else
+            # assume tag format release-X.Y.Z
             VER="${LAST#release-}"
             IFS='.' read -r MAJ MIN PAT <<< "$VER"
             PAT=$((PAT+1))
@@ -65,36 +72,35 @@ jobs:
           echo "Generated changelog:"
           cat changelog.md
 
-      # --- DEBUG STEP: simple GET using the same token ---
       - name: Test GitHub API with GITHUB_TOKEN
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          echo "Testing /user with GITHUB_TOKEN..."
-          curl --silent --show-error --fail \
-            --request GET \
-            --url "https://api.github.com/user" \
-            --header "Authorization: Bearer $GH_TOKEN" \
-            --header "Accept: application/vnd.github+json"
+          echo "Calling $GITHUB_API_URL/user"
+          curl -sS -w "\nHTTP status: %{http_code}\n" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/user"
 
       - name: Create GitHub Release with tag and changelog
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.version.outputs.new_tag }}"
           COMMIT_SHA="${{ github.sha }}"
 
-          # Escape changelog into JSON string
+          # Escape changelog into a JSON-safe string
           CHANGELOG_JSON=$(python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))" < changelog.md)
 
-          API_URL="https://api.github.com/repos/${{ github.repository }}/releases"
+          # Use the Enterprise API URL from the environment
+          API_URL="$GITHUB_API_URL/repos/${{ github.repository }}/releases"
 
           echo "Creating release $TAG for commit $COMMIT_SHA via $API_URL"
 
           HTTP_STATUS=$(curl -sSL -w "%{http_code}" -o /tmp/release.json \
             --request POST \
             --url "$API_URL" \
-            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Authorization: Bearer $GITHUB_TOKEN" \
             --header "Accept: application/vnd.github+json" \
             --data "{
               \"tag_name\": \"$TAG\",
@@ -104,8 +110,10 @@ jobs:
             }")
 
           echo "HTTP status: $HTTP_STATUS"
+          echo "Response:"
           cat /tmp/release.json
 
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "Failed to create release"
             exit 1
           fi
