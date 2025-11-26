@@ -2,7 +2,8 @@ name: Deploy to Production
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
@@ -11,10 +12,12 @@ jobs:
     name: Deploy to Production Server
     runs-on: [self-hosted, Linux, X64]
     environment: production
-    
+    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up SSH
         run: |
