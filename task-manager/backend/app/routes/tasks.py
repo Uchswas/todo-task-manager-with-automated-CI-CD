@@ -71,7 +71,10 @@ def _validate_and_apply_task_update(task, data, user_id, task_id):
         return None, exc
 
     if errors:
-        return jsonify({'error': 'Validation failed', 'details': errors}), None
+        return (
+            jsonify({'error': 'Task validation failed', 'details': errors}),
+            400,
+        ), None
 
     _apply_updates_to_task(task, data)
     return None, None

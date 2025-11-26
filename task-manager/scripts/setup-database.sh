@@ -16,28 +16,32 @@ NC='\033[0m' # No Color
 # ENVIRONMENT="${ENVIRONMENT:-dev}"
 ENVIRONMENT=$1
 
-# Database configuration based on environment
-case "$ENVIRONMENT" in
-    dev)
-        DB_NAME="todo_app_dev"
-        DB_USER="todo_user"
-        DB_PASSWORD="todo_password"
-        DB_HOST="localhost"
-        DB_PORT="5432"
-        ;;
-    test)
-        DB_NAME="todo_app_test"
-        DB_USER="todo_user_test"
-        DB_PASSWORD="todo_test_password"
-        DB_HOST="localhost"
-        DB_PORT="5432"
-        ;;
-    *)
-        echo -e "${RED}Error: Invalid environment '${ENVIRONMENT}'${NC}"
-        echo "Valid options: dev, test, prod"
-        exit 1
-        ;;
-esac
+# Database configuration - all values must come from environment variables
+# Map POSTGRES_* variables to DB_* if DB_* are not explicitly set
+DB_NAME="${DB_NAME:-${POSTGRES_DB}}"
+DB_USER="${DB_USER:-${POSTGRES_USER}}"
+DB_PASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD}}"
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+
+# Validate required variables
+if [ -z "$DB_NAME" ]; then
+    echo -e "${RED}Error: Database name is required${NC}"
+    echo "Set DB_NAME or POSTGRES_DB environment variable."
+    exit 1
+fi
+
+if [ -z "$DB_USER" ]; then
+    echo -e "${RED}Error: Database user is required${NC}"
+    echo "Set DB_USER or POSTGRES_USER environment variable."
+    exit 1
+fi
+
+if [ -z "$DB_PASSWORD" ]; then
+    echo -e "${RED}Error: Database password is required${NC}"
+    echo "Set DB_PASSWORD or POSTGRES_PASSWORD environment variable."
+    exit 1
+fi
 
 POSTGRES_RUNNER=""
 
@@ -76,20 +80,48 @@ ensure_postgres_runner() {
 }
 
 run_as_postgres() {
-    if [ -z "$POSTGRES_RUNNER" ]; then
-        echo "Internal error: POSTGRES_RUNNER is not configured." >&2
-        exit 1
-    fi
-
-    if [ "$POSTGRES_RUNNER" = "sudo" ]; then
-        sudo -u postgres "$@"
-    else
-        local cmd=""
+    # If connecting to remote/Docker database, use direct psql connection
+    if [ "${DB_HOST:-localhost}" != "localhost" ]; then
+        # Docker/remote mode: use POSTGRES_USER as superuser for admin operations
+        # In Docker, when POSTGRES_USER is set, that user is created as a superuser
+        # with the password from POSTGRES_PASSWORD, so we can use it for admin operations
+        # If POSTGRES_USER equals DB_USER, we can still use it since it's a superuser
+        local superuser="${POSTGRES_USER:-postgres}"
+        
+        # Connect to 'postgres' database for admin operations (unless command specifies -d)
+        # Check if the command already specifies a database
+        local db_specified=false
         for arg in "$@"; do
-            cmd+="$(printf '%q ' "$arg")"
+            if [ "$arg" = "-d" ] || [ "$arg" = "--dbname" ]; then
+                db_specified=true
+                break
+            fi
         done
-        cmd=${cmd% }
-        su - postgres -c "$cmd"
+        
+        if [ "$db_specified" = false ]; then
+            # No database specified, connect to 'postgres' for admin operations
+            PGPASSWORD="${POSTGRES_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT:-5432}" -U "${superuser}" -d postgres "$@"
+        else
+            # Database already specified in command
+            PGPASSWORD="${POSTGRES_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT:-5432}" -U "${superuser}" "$@"
+        fi
+    else
+        # Local mode: switch to postgres user
+        if [ -z "$POSTGRES_RUNNER" ]; then
+            echo "Internal error: POSTGRES_RUNNER is not configured." >&2
+            exit 1
+        fi
+
+        if [ "$POSTGRES_RUNNER" = "sudo" ]; then
+            sudo -u postgres "$@"
+        else
+            local cmd=""
+            for arg in "$@"; do
+                cmd+="$(printf '%q ' "$arg")"
+            done
+            cmd=${cmd% }
+            su - postgres -c "$cmd"
+        fi
     fi
 }
 
@@ -119,7 +151,10 @@ print_info() {
     echo -e "${BLUE} $1${NC}"
 }
 
-ensure_postgres_runner
+# Only ensure postgres runner for local setup (not Docker/remote)
+if [ "${DB_HOST:-localhost}" = "localhost" ]; then
+    ensure_postgres_runner
+fi
 
 ################################################################################
 # Prerequisite Checks
@@ -135,18 +170,24 @@ if ! command -v psql &> /dev/null; then
 fi
 print_success "PostgreSQL client found"
 
-# Check if PostgreSQL service is running
-if ! sudo service postgresql status &> /dev/null; then
-    print_warning "PostgreSQL service is not running"
-    print_info "Attempting to start PostgreSQL service..."
-    if sudo service postgresql start &> /dev/null; then
-        print_success "PostgreSQL service started"
+# Check if PostgreSQL service is running (skip in Docker - DB_HOST != localhost means remote/Docker)
+if [ "${DB_HOST:-localhost}" = "localhost" ]; then
+    # Only check service status when running locally
+    if ! sudo service postgresql status &> /dev/null; then
+        print_warning "PostgreSQL service is not running"
+        print_info "Attempting to start PostgreSQL service..."
+        if sudo service postgresql start &> /dev/null; then
+            print_success "PostgreSQL service started"
+        else
+            print_error "Failed to start PostgreSQL service automatically"
+            exit 1
+        fi
     else
-        print_error "Failed to start PostgreSQL service automatically"
-        exit 1
+        print_success "PostgreSQL service is running"
     fi
 else
-    print_success "PostgreSQL service is running"
+    # Running in Docker or remote - skip service check
+    print_info "Running in Docker/remote mode (DB_HOST=${DB_HOST}), skipping service check"
 fi
 
 ################################################################################
@@ -155,28 +196,34 @@ fi
 
 print_header "Setting up Database: ${DB_NAME}"
 
-print_info "Dropping database '${DB_NAME}' if it exists..."
-run_as_postgres psql -c "DROP DATABASE IF EXISTS ${DB_NAME};" >/dev/null
-print_success "Database dropped (if it existed)"
+# In Docker, the user might already exist (created by POSTGRES_USER env var)
+# Check if user exists and create/update accordingly
+print_info "Ensuring database user '${DB_USER}' exists..."
+if run_as_postgres -c "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}';" -t 2>/dev/null | grep -q 1; then
+    print_info "User '${DB_USER}' already exists, updating password..."
+    run_as_postgres -c "ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';" >/dev/null
+else
+    print_info "Creating database user '${DB_USER}'..."
+    run_as_postgres -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';" >/dev/null
+fi
+print_success "User '${DB_USER}' ready"
 
-print_info "Dropping user '${DB_USER}' if it exists..."
-run_as_postgres psql -c "DROP ROLE IF EXISTS ${DB_USER};" >/dev/null
-print_success "User dropped (if it existed)"
-
-# Create database user if it doesn't exist
-print_info "Creating database user '${DB_USER}'..."
-run_as_postgres psql -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';" >/dev/null
-print_success "User '${DB_USER}' created"
-
-# Create database
-print_info "Creating database '${DB_NAME}'..."
-run_as_postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};" >/dev/null
-print_success "Database '${DB_NAME}' created"
+# Check if database exists
+print_info "Ensuring database '${DB_NAME}' exists..."
+if run_as_postgres -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw "${DB_NAME}"; then
+    print_info "Database '${DB_NAME}' already exists"
+    # Update owner if needed
+    run_as_postgres -c "ALTER DATABASE ${DB_NAME} OWNER TO ${DB_USER};" >/dev/null 2>&1 || true
+else
+    print_info "Creating database '${DB_NAME}'..."
+    run_as_postgres -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};" >/dev/null
+fi
+print_success "Database '${DB_NAME}' ready"
 
 # Grant privileges
 print_info "Granting privileges..."
-run_as_postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};" >/dev/null
-run_as_postgres psql -d "${DB_NAME}" -c "GRANT ALL ON SCHEMA public TO ${DB_USER};" >/dev/null 2>&1 || true
+run_as_postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};" >/dev/null
+run_as_postgres -d "${DB_NAME}" -c "GRANT ALL ON SCHEMA public TO ${DB_USER};" >/dev/null 2>&1 || true
 print_success "Privileges granted"
 
 ################################################################################

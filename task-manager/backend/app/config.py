@@ -12,15 +12,21 @@ load_dotenv()
 class Config:
     """Base configuration with defaults shared across environments."""
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or (
-        'postgresql://todo_user:password@localhost/todo_app_dev'
-    )
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError("SECRET_KEY environment variable is required")
+
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("DATABASE_URL environment variable is required")
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() == 'true'
 
     # JWT Configuration
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET') or SECRET_KEY
+    if not JWT_SECRET_KEY:
+        raise ValueError("JWT_SECRET or SECRET_KEY environment variable is required")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
@@ -58,9 +64,10 @@ class TestingConfig(Config):
     """Configuration for running the automated test suite."""
 
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or (
-        'postgresql://todo_user:password@localhost/todo_app_test'
-    )
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL')
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("TEST_DATABASE_URL environment variable is required")
+
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)  # Shorter for testing
 
 

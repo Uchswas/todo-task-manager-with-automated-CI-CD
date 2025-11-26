@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { tasksAPI } from '../utils/api';
 
 export const useTasks = (initialFilters = {}) => {
@@ -14,6 +14,11 @@ export const useTasks = (initialFilters = {}) => {
     has_prev: false
   });
   const [filters, setFilters] = useState(initialFilters);
+  const initialFiltersRef = useRef(initialFilters);
+
+  useEffect(() => {
+    initialFiltersRef.current = initialFilters;
+  }, [initialFilters]);
 
   const fetchTasks = useCallback(async (customFilters = {}) => {
     setLoading(true);
@@ -102,14 +107,14 @@ export const useTasks = (initialFilters = {}) => {
     fetchTasks();
   };
 
-  const updateFilters = (newFilters) => {
+  const updateFilters = useCallback((newFilters) => {
     // Replace filters entirely instead of merging to properly clear old filters
     setFilters({
-      ...initialFilters,
+      ...initialFiltersRef.current,
       ...newFilters,
       page: 1 // Reset to first page when filters change
     });
-  };
+  }, []);
 
   const loadMore = () => {
     if (pagination.has_next) {

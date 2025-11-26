@@ -41,7 +41,7 @@ def _handle_email_update(data, current_user):
 
     # Validate email format
     if not validate_email(email):
-        return jsonify({'error': 'Invalid email format'}), 400, None
+        return (jsonify({'error': 'Invalid email format'}), 400), None, None
 
     lookup_error = None
     existing_user = None
@@ -59,7 +59,7 @@ def _handle_email_update(data, current_user):
         return None, None, lookup_error
 
     if existing_user:
-        return jsonify({'error': 'Email already registered'}), 400, None
+        return (jsonify({'error': 'Email already registered'}), 400), None, None
 
     return None, email, None
 

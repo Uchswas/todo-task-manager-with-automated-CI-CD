@@ -89,8 +89,16 @@ const TasksPage = () => {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localFilters.search, localFilters.status, localFilters.priority, localFilters.category_id, localFilters.sort_by, localFilters.sort_order]);
+
+  }, [
+    localFilters.search,
+    localFilters.status,
+    localFilters.priority,
+    localFilters.category_id,
+    localFilters.sort_by,
+    localFilters.sort_order,
+    updateFilters,
+  ]);
 
   const handleFilterChange = (key, value) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));
