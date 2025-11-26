@@ -1,0 +1,77 @@
+name: Auto Release with Changelog
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches:
+      - release
+
+permissions:
+  contents: write    
+
+jobs:
+  release:
+    runs-on: self-hosted
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)   
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: release
+          fetch-depth: 0   
+
+      - name: Get last tag
+        id: last_tag
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Compute next version (patch bump)
+        id: version
+        run: |
+          LAST="${{ steps.last_tag.outputs.last_tag }}"
+          if [ -z "$LAST" ]; then
+            # no previous tag: start at release-0.0.0
+            NEW="release-0.0.0"
+          else
+            # assume tag format release-X.Y.Z
+            VER="${LAST#release-}"
+            IFS='.' read -r MAJ MIN PAT <<< "$VER"
+            PAT=$((PAT+1))
+            NEW="release-$MAJ.$MIN.$PAT"
+          fi
+          echo "new_tag=$NEW" >> $GITHUB_OUTPUT
+          echo "Next tag: $NEW"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LAST="${{ steps.last_tag.outputs.last_tag }}"
+          NEW="${{ steps.version.outputs.new_tag }}"
+          echo "# Changelog for $NEW" > changelog.md
+          echo >> changelog.md
+
+          if [ -z "$LAST" ]; then
+            echo "Initial release." >> changelog.md
+            echo >> changelog.md
+            git log --oneline >> changelog.md
+          else
+            echo "Changes since $LAST:" >> changelog.md
+            echo >> changelog.md
+            git log "$LAST"..HEAD --oneline >> changelog.md
+          fi
+
+          echo "Generated changelog:"
+          cat changelog.md
+
+      - name: Create GitHub Release with tag and changelog
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          name: ${{ steps.version.outputs.new_tag }}
+          body_path: changelog.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          

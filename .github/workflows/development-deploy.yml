@@ -53,12 +53,12 @@ jobs:
           # Verify installation
           ~/.local/bin/ansible-playbook --version || ansible-playbook --version
 
-      # - name: Create host.yaml file
-      #   run: |
-      #     cat > ansible/host.yaml << EOF
-      #     [development]
-      #     ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
-      #     EOF
+      - name: Create host.yaml file
+        run: |
+          cat > ansible/host.yaml << EOF
+          [development]
+          ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
+          EOF
 
       - name: Create .env file
         run: |
