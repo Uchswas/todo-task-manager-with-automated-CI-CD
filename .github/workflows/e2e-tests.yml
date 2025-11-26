@@ -3,10 +3,7 @@ on:
   pull_request:
     branches:
       - release
-    paths:
-      - 'task-manager/frontend/**'
-      - 'task-manager/backend/**'
-      - '.github/workflows/e2e-tests.yml'
+      - main
 
 jobs:
   e2e:

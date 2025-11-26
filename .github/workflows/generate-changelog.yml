@@ -2,17 +2,20 @@ name: Auto Release with Changelog
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - release
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   release:
     runs-on: self-hosted
     environment: production
+    if: github.event.pull_request.merged == true
 
     steps:
       - name: Checkout repo
@@ -93,3 +96,48 @@ jobs:
             cat /tmp/release.json
             exit 1
           fi
+
+      - name: Create PR to main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # Create PR from release to main
+          PR_TITLE="Release: ${{ steps.version.outputs.new_tag }}"
+          PR_BODY="This PR merges the release branch into main after successful e2e tests and changelog generation."
+          
+          # Check if PR already exists
+          EXISTING_PR=$(curl -sSL \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:release&base=main&state=open" | \
+            python3 -c "import sys, json; prs = json.load(sys.stdin); print(prs[0]['number'] if prs else '')")
+          
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists from release to main"
+            exit 0
+          fi
+          
+          # Create new PR
+          PR_RESPONSE=$(curl -sSL -w "\n%{http_code}" \
+            --request POST \
+            --url "$GITHUB_API_URL/repos/${{ github.repository }}/pulls" \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --data "{
+              \"title\": \"$PR_TITLE\",
+              \"body\": \"$PR_BODY\",
+              \"head\": \"release\",
+              \"base\": \"main\"
+            }")
+          
+          HTTP_CODE=$(echo "$PR_RESPONSE" | tail -n1)
+          PR_BODY_RESPONSE=$(echo "$PR_RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" != "201" ]; then
+            echo "Failed to create PR (HTTP $HTTP_CODE)"
+            echo "$PR_BODY_RESPONSE" | python3 -m json.tool || echo "$PR_BODY_RESPONSE"
+            exit 1
+          fi
+          
+          PR_NUMBER=$(echo "$PR_BODY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['number'])")
+          echo "Created PR #$PR_NUMBER from release to main"
