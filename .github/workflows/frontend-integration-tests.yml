@@ -5,6 +5,11 @@ on:
       - dev
       - release
       - main
+  push:
+    branches:
+      - dev
+      - release
+      - main
 
 jobs:
   test:
