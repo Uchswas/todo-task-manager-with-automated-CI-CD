@@ -20,9 +20,10 @@ jobs:
     uses: ./.github/workflows/es-lint.yaml
 
   test-backend-unit:
-    environment: development
     uses: ./.github/workflows/backend-unit-tests.yml
     secrets: inherit
+    with:
+      environment: development
 
   test-frontend-unit:
     uses: ./.github/workflows/frontend-unit-tests.yml
