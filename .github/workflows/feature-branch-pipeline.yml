@@ -5,12 +5,12 @@ on:
     branches-ignore:
       - main
       - dev
-      - release
+      - 'release**'
   pull_request:
     branches-ignore:
       - main
       - dev
-      - release
+      - 'release**'
 
 jobs:
   python-lint:
@@ -20,6 +20,7 @@ jobs:
     uses: ./.github/workflows/es-lint.yaml
 
   test-backend-unit:
+    environment: development
     uses: ./.github/workflows/backend-unit-tests.yml
     secrets: inherit
 
