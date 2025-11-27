@@ -1,0 +1,713 @@
+name: Combined CI & CD
+on:
+- push
+- pull_request
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  python-lint:
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install PostgreSQL development libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev postgresql-client
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Create virtual environment
+      working-directory: task-manager/backend
+      run: |
+        python -m venv venv
+
+    - name: Install dependencies and pylint
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint
+
+    - name: Run pylint
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pylint app tests run.py --ignore venv,.venv
+
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+  eslint:
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: task-manager/frontend
+      run: |
+        npm install
+
+    - name: Run ESLint
+      working-directory: task-manager/frontend
+      run: |
+        npx eslint . --ext .js,.jsx,.ts,.tsx
+
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+  backend-unit-tests:
+    needs:
+    - python-lint
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    environment: development
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install PostgreSQL development libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev postgresql-client
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Create virtual environment
+      working-directory: task-manager/backend
+      run: |
+        python -m venv venv
+
+    - name: Activate virtual environment and install dependencies
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run unit tests
+      working-directory: task-manager/backend
+      env:
+        # Database Configuration
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_TEST_DB: ${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER: ${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+        # Security Secrets
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        # Flask Configuration
+        FLASK_ENV: ${{ vars.FLASK_ENV }}
+        FLASK_APP: ${{ vars.FLASK_APP }}
+        SQLALCHEMY_ECHO: ${{ vars.SQLALCHEMY_ECHO }}
+        TASKS_PER_PAGE: ${{ vars.TASKS_PER_PAGE }}
+        # CORS Configuration
+        CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+      run: |
+        export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
+        export TEST_DATABASE_URL="postgresql://${POSTGRES_TEST_USER}:${POSTGRES_TEST_PASSWORD}@localhost:5432/${POSTGRES_TEST_DB}"
+        source venv/bin/activate
+        pytest tests/unit -v
+
+    if: success() && (github.event_name == 'push' || github.event_name == 'pull_request')
+
+  frontend-unit-tests:
+    needs:
+    - eslint
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: task-manager/frontend
+      run: |
+        npm install
+
+    - name: Run unit tests
+      working-directory: task-manager/frontend
+      run: |
+        npm run test:unit
+    
+    if: success() && (github.event_name == 'push' || github.event_name == 'pull_request')
+
+  backend-integration-tests:
+    needs:
+    - backend-unit-tests
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    environment: development
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Start PostgreSQL container
+      env:
+        POSTGRES_TEST_DB: ${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER: ${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+      run: |
+        sudo docker run -d \
+          --name test-postgres \
+          -e POSTGRES_DB=${POSTGRES_TEST_DB} \
+          -e POSTGRES_USER=${POSTGRES_TEST_USER} \
+          -e POSTGRES_PASSWORD=${POSTGRES_TEST_PASSWORD} \
+          -p 5432:5432 \
+          postgres:15
+        sleep 5
+
+    - name: Install PostgreSQL development libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev postgresql-client
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Create virtual environment
+      working-directory: task-manager/backend
+      run: |
+        python -m venv venv
+
+    - name: Activate virtual environment and install dependencies
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run integration tests
+      working-directory: task-manager/backend
+      env:
+        # Database Configuration
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_TEST_DB: ${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER: ${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+        # Security Secrets
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        # Flask Configuration
+        FLASK_ENV: ${{ vars.FLASK_ENV }}
+        FLASK_APP: ${{ vars.FLASK_APP }}
+        SQLALCHEMY_ECHO: ${{ vars.SQLALCHEMY_ECHO }}
+        TASKS_PER_PAGE: ${{ vars.TASKS_PER_PAGE }}
+        # CORS Configuration
+        CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+      run: |
+        export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
+        export TEST_DATABASE_URL="postgresql://${POSTGRES_TEST_USER}:${POSTGRES_TEST_PASSWORD}@localhost:5432/${POSTGRES_TEST_DB}"
+        source venv/bin/activate
+        pytest tests/integration -v
+
+    - name: Clean up PostgreSQL container
+      if: always()
+      run: |
+        sudo docker stop test-postgres || true
+        sudo docker rm test-postgres || true
+
+    if: success() && ((github.event_name == 'push' 
+      && github.ref matches 'refs/heads/(dev|main|release.*)') 
+      || (github.event_name == 'pull_request' 
+      && github.base_ref matches '^(dev|main|release.*)$'))
+
+
+  frontend-integration-tests:
+    needs:
+    - frontend-unit-tests
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: task-manager/frontend
+      run: |
+        npm install
+
+    - name: Run integration tests
+      working-directory: task-manager/frontend
+      run: |
+        npm run test:integration
+
+    if: success() && ((github.event_name == 'push' 
+      && github.ref matches 'refs/heads/(dev|main|release.*)') 
+      || (github.event_name == 'pull_request' 
+      && github.base_ref matches '^(dev|main|release.*)$'))
+
+
+  e2e-tests:
+    needs:
+    - backend-integration-tests
+    - frontend-integration-tests
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    environment: development
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Start PostgreSQL container for testing
+      env:
+        POSTGRES_TEST_DB: ${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER: ${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+      run: |
+        sudo docker run -d \
+          --name e2e-postgres \
+          -e POSTGRES_DB=${POSTGRES_TEST_DB} \
+          -e POSTGRES_USER=${POSTGRES_TEST_USER} \
+          -e POSTGRES_PASSWORD=${POSTGRES_TEST_PASSWORD} \
+          -p 5432:5432 \
+          postgres:15
+        sleep 5
+
+    - name: Install PostgreSQL development libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev postgresql-client
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Create backend virtual environment
+      working-directory: task-manager/backend
+      run: |
+        python -m venv venv
+
+    - name: Install backend dependencies
+      working-directory: task-manager/backend
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install frontend dependencies
+      working-directory: task-manager/frontend
+      run: |
+        npm install
+
+    - name: Install Playwright browsers
+      working-directory: task-manager/frontend
+      run: |
+        npx playwright install --with-deps
+
+    - name: Run E2E tests
+      working-directory: task-manager/frontend
+      env:
+        # Database Configuration
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_TEST_DB: ${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER: ${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+        # Security Secrets
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        # Flask Configuration
+        FLASK_ENV: ${{ vars.FLASK_ENV }}
+        FLASK_APP: ${{ vars.FLASK_APP }}
+        SQLALCHEMY_ECHO: ${{ vars.SQLALCHEMY_ECHO }}
+        TASKS_PER_PAGE: ${{ vars.TASKS_PER_PAGE }}
+        # CORS Configuration
+        CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+        # Frontend Configuration
+        REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
+        # Playwright Configuration
+        PLAYWRIGHT_BASE_URL: http://localhost:3000
+        PLAYWRIGHT_BACKEND_URL: http://localhost:5000
+      run: |
+        export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
+        export TEST_DATABASE_URL="postgresql://${POSTGRES_TEST_USER}:${POSTGRES_TEST_PASSWORD}@localhost:5432/${POSTGRES_TEST_DB}"
+        npm run test:e2e -- --max-failures=10
+
+    - name: Upload Playwright test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: playwright-report
+        path: task-manager/frontend/playwright-report/
+        retention-days: 30
+
+    - name: Clean up PostgreSQL container
+      if: always()
+      run: |
+        sudo docker stop e2e-postgres || true
+        sudo docker rm e2e-postgres || true
+
+    if: success() && github.event_name == 'pull_request' && (github.base_ref matches '^release.*$' || github.base_ref == 'main')
+
+  deploy-development:
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    environment: development
+    if: github.event_name == 'pull_request' 
+      && github.event.action == 'closed'
+      && github.base_ref == 'dev' 
+      && github.event.pull_request.merged == true
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: dev
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        if [ ! -f ~/.ssh/gcp_key ]; then
+          echo "Private key (~/.ssh/gcp_key) not found on runner. Please install it before running this job." >&2
+          exit 1
+        fi
+        cp ~/.ssh/gcp_key ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+    - name: Check if Ansible is installed
+      id: check_ansible
+      run: |
+        if command -v ansible-playbook &> /dev/null; then
+          echo "installed=true" >> $GITHUB_OUTPUT
+          ansible-playbook --version
+        else
+          echo "installed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install Ansible (if not installed)
+      if: steps.check_ansible.outputs.installed == 'false'
+      run: |
+        # Install pip if not available
+        if ! python3 -m pip --version &> /dev/null; then
+          curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+          python3 /tmp/get-pip.py --user --break-system-packages
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        fi
+        # Install Ansible using --break-system-packages (self-hosted runner)
+        python3 -m pip install --user --break-system-packages ansible
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        # Verify installation
+        ~/.local/bin/ansible-playbook --version || ansible-playbook --version
+
+    - name: Create host.yaml file
+      run: |
+        cat > ansible/host.yaml << EOF
+        [development]
+        ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
+        EOF
+
+    - name: Create .env file
+      run: |
+        cat > ansible/.env << EOF
+        # Database Configuration
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_TEST_DB=${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER=${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD=${{ secrets.POSTGRES_TEST_PASSWORD }}
+
+        # Security Secrets
+        SECRET_KEY=${{ secrets.SECRET_KEY }}
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+        # Flask Configuration
+        FLASK_ENV=${{ vars.FLASK_ENV }}
+        FLASK_APP=${{ vars.FLASK_APP }}
+        SQLALCHEMY_ECHO=${{ vars.SQLALCHEMY_ECHO }}
+        TASKS_PER_PAGE=${{ vars.TASKS_PER_PAGE }}
+
+        # CORS Configuration
+        CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
+
+        # Frontend Configuration
+        REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}
+        EOF
+
+    - name: Deploy with Ansible
+      run: |
+        cd ansible
+        ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit development --private-key ~/.ssh/id_rsa
+
+  deploy-production:
+    runs-on:
+    - self-hosted
+    - Linux
+    - X64
+    environment: production
+    if: github.event_name == 'pull_request' 
+      && github.event.action == 'closed' 
+      && github.base_ref == 'main' 
+      && github.event.pull_request.merged == true
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        if [ ! -f ~/.ssh/gcp_key ]; then
+          echo "Private key (~/.ssh/gcp_key) not found on runner. Please install it before running this job." >&2
+          exit 1
+        fi
+        cp ~/.ssh/gcp_key ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+    - name: Check if Ansible is installed
+      id: check_ansible
+      run: |
+        if command -v ansible-playbook &> /dev/null; then
+          echo "installed=true" >> $GITHUB_OUTPUT
+          ansible-playbook --version
+        else
+          echo "installed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install Ansible (if not installed)
+      if: steps.check_ansible.outputs.installed == 'false'
+      run: |
+        # Install pip if not available
+        if ! python3 -m pip --version &> /dev/null; then
+          curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+          python3 /tmp/get-pip.py --user --break-system-packages
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        fi
+        # Install Ansible using --break-system-packages (self-hosted runner)
+        python3 -m pip install --user --break-system-packages ansible
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        # Verify installation
+        ~/.local/bin/ansible-playbook --version || ansible-playbook --version
+
+    - name: Create host.yaml file
+      run: |
+        cat > ansible/host.yaml << EOF
+        [production]
+        ${{ vars.SSH_HOST }} ansible_user=${{ vars.SSH_USER }} ansible_python_interpreter=/usr/bin/python3
+        EOF
+
+    - name: Create .env file
+      run: |
+        cat > ansible/.env << EOF
+        # Database Configuration
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_TEST_DB=${{ secrets.POSTGRES_TEST_DB }}
+        POSTGRES_TEST_USER=${{ secrets.POSTGRES_TEST_USER }}
+        POSTGRES_TEST_PASSWORD=${{ secrets.POSTGRES_TEST_PASSWORD }}
+
+        # Security Secrets
+        SECRET_KEY=${{ secrets.SECRET_KEY }}
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+        # Flask Configuration
+        FLASK_ENV=${{ vars.FLASK_ENV }}
+        FLASK_APP=${{ vars.FLASK_APP }}
+        SQLALCHEMY_ECHO=${{ vars.SQLALCHEMY_ECHO }}
+        TASKS_PER_PAGE=${{ vars.TASKS_PER_PAGE }}
+
+        # CORS Configuration
+        CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
+
+        # Frontend Configuration
+        REACT_APP_API_URL=${{ vars.REACT_APP_API_URL }}
+        EOF
+
+    - name: Deploy with Ansible
+      run: |
+        cd ansible
+        ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i host.yaml deploy.yml --limit production --private-key ~/.ssh/id_rsa
+
+  release-changelog:
+    runs-on: self-hosted
+    environment: production
+    if: github.event_name == 'pull_request' 
+      && github.event.action == 'closed' 
+      && github.base_ref matches '^release.*$'
+      && github.event.pull_request.merged == true
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.base_ref }}
+        fetch-depth: 0
+
+    - name: Get last tag
+      id: last_tag
+      run: |
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
+
+    - name: Compute next version (patch bump)
+      id: version
+      run: |
+        LAST="${{ steps.last_tag.outputs.last_tag }}"
+        if [ -z "$LAST" ]; then
+          # no previous tag: start at release-0.0.0
+          NEW="release-0.0.0"
+        else
+          # assume tag format release-X.Y.Z
+          VER="${LAST#release-}"
+          IFS='.' read -r MAJ MIN PAT <<< "$VER"
+          PAT=$((PAT+1))
+          NEW="release-$MAJ.$MIN.$PAT"
+        fi
+        echo "new_tag=$NEW" >> "$GITHUB_OUTPUT"
+
+    - name: Generate changelog
+      run: |
+        LAST="${{ steps.last_tag.outputs.last_tag }}"
+        NEW="${{ steps.version.outputs.new_tag }}"
+
+        {
+          echo "# Changelog for $NEW"
+          echo
+
+          if [ -z "$LAST" ]; then
+            echo "Initial release."
+            echo
+            git log --oneline
+          else
+            echo "Changes since $LAST:"
+            echo
+            git log "$LAST"..HEAD --oneline
+          fi
+        } > changelog.md
+
+    - name: Create GitHub Release with tag and changelog
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        TAG="${{ steps.version.outputs.new_tag }}"
+        COMMIT_SHA="${{ github.sha }}"
+
+        # Escape changelog into a JSON-safe string
+        CHANGELOG_JSON=$(python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))" < changelog.md)
+
+        # Use the Enterprise API URL from the environment
+        API_URL="$GITHUB_API_URL/repos/${{ github.repository }}/releases"
+
+        HTTP_STATUS=$(curl -sSL -w "%{http_code}" -o /tmp/release.json \
+          --request POST \
+          --url "$API_URL" \
+          --header "Authorization: Bearer $GITHUB_TOKEN" \
+          --header "Accept: application/vnd.github+json" \
+          --data "{
+            \"tag_name\": \"$TAG\",
+            \"target_commitish\": \"$COMMIT_SHA\",
+            \"name\": \"$TAG\",
+            \"body\": $CHANGELOG_JSON
+          }")
+
+        if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+          echo "Failed to create release (HTTP $HTTP_STATUS)"
+          cat /tmp/release.json
+          exit 1
+        fi
+
+    - name: Create PR to main
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        # Create PR from release to main
+        PR_TITLE="Release: ${{ steps.version.outputs.new_tag }}"
+        PR_BODY="This PR merges the ${{ github.base_ref }} branch into main after successful e2e tests and changelog generation."
+        
+        # Check if PR already exists
+        EXISTING_PR=$(curl -sSL \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          "$GITHUB_API_URL/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${{ github.base_ref }}&base=main&state=open" | \
+          python3 -c "import sys, json; prs = json.load(sys.stdin); print(prs[0]['number'] if prs else '')")
+        
+        if [ -n "$EXISTING_PR" ]; then
+          echo "PR #$EXISTING_PR already exists from ${{ github.base_ref }} to main"
+          exit 0
+        fi
+        
+        # Create new PR
+        PR_RESPONSE=$(curl -sSL -w "\n%{http_code}" \
+          --request POST \
+          --url "$GITHUB_API_URL/repos/${{ github.repository }}/pulls" \
+          --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+          --header "Accept: application/vnd.github+json" \
+          --data "{
+            \"title\": \"$PR_TITLE\",
+            \"body\": \"$PR_BODY\",
+            \"head\": \"${{ github.base_ref }}\",
+            \"base\": \"main\"
+          }")
+        
+        HTTP_CODE=$(echo "$PR_RESPONSE" | tail -n1)
+        PR_BODY_RESPONSE=$(echo "$PR_RESPONSE" | sed '$d')
+        
+        if [ "$HTTP_CODE" != "201" ]; then
+          echo "Failed to create PR (HTTP $HTTP_CODE)"
+          echo "$PR_BODY_RESPONSE" | python3 -m json.tool || echo "$PR_BODY_RESPONSE"
+          exit 1
+        fi
+        
+        PR_NUMBER=$(echo "$PR_BODY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['number'])")
+        echo "Created PR #$PR_NUMBER from ${{ github.base_ref }} to main"
