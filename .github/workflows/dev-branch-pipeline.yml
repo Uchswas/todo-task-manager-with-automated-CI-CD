@@ -2,6 +2,7 @@ name: Dev Branch Pipeline
 
 on:
   pull_request:
+    types: [opened, synchronize, closed]
     branches:
       - dev
   workflow_dispatch:
@@ -36,7 +37,7 @@ jobs:
     uses: ./.github/workflows/frontend-integration-tests.yml
 
   deploy:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/development-deploy.yml
     secrets: inherit
     with:
