@@ -5,12 +5,12 @@ on:
     branches-ignore:
       - main
       - dev
-      - 'release**'
+      - release
   pull_request:
     branches-ignore:
       - main
       - dev
-      - 'release**'
+      - release
 
 jobs:
   python-lint:
