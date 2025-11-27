@@ -21,6 +21,7 @@ jobs:
 
   test-backend-unit:
     uses: ./.github/workflows/backend-unit-tests.yml
+    secrets: inherit
 
   test-frontend-unit:
     uses: ./.github/workflows/frontend-unit-tests.yml

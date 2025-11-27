@@ -19,6 +19,7 @@ jobs:
 
   test-backend-unit:
     uses: ./.github/workflows/backend-unit-tests.yml
+    secrets: inherit
 
   test-frontend-unit:
     uses: ./.github/workflows/frontend-unit-tests.yml
@@ -26,6 +27,7 @@ jobs:
   test-backend-integration:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
     uses: ./.github/workflows/backend-integration-tests.yml
+    secrets: inherit
 
   test-frontend-integration:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
@@ -35,6 +37,7 @@ jobs:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit, test-backend-integration, test-frontend-integration]
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/development-deploy.yml
+    secrets: inherit
     with:
       branch: dev
 
