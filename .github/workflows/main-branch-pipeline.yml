@@ -13,40 +13,32 @@ on:
 jobs:
   python-lint:
     uses: ./.github/workflows/python-lint.yaml
-    secrets: inherit
 
   eslint:
     uses: ./.github/workflows/es-lint.yaml
-    secrets: inherit
 
   test-backend-unit:
     uses: ./.github/workflows/backend-unit-tests.yml
-    secrets: inherit
 
   test-frontend-unit:
     uses: ./.github/workflows/frontend-unit-tests.yml
-    secrets: inherit
 
   test-backend-integration:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
     uses: ./.github/workflows/backend-integration-tests.yml
-    secrets: inherit
 
   test-frontend-integration:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
     uses: ./.github/workflows/frontend-integration-tests.yml
-    secrets: inherit
 
   test-e2e:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit, test-backend-integration, test-frontend-integration]
     uses: ./.github/workflows/e2e-tests.yml
-    secrets: inherit
 
   deploy:
     needs: [python-lint, eslint, test-backend-unit, test-frontend-unit, test-backend-integration, test-frontend-integration, test-e2e]
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/production-deploy.yml
-    secrets: inherit
     with:
       branch: main
 
