@@ -9,20 +9,20 @@ on:
 
 jobs:
   python-lint:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize'))
     uses: ./.github/workflows/python-lint.yaml
 
   eslint:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize'))
     uses: ./.github/workflows/es-lint.yaml
 
   test-backend-unit:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize'))
     uses: ./.github/workflows/backend-unit-tests.yml
     secrets: inherit
 
   test-frontend-unit:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize'))
     uses: ./.github/workflows/frontend-unit-tests.yml
 
   test-backend-integration:
@@ -31,7 +31,7 @@ jobs:
     uses: ./.github/workflows/backend-integration-tests.yml
     secrets: inherit
 
-  test-frontend-integration:
+ test-frontend-integration:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     needs: [eslint, test-frontend-unit]
     uses: ./.github/workflows/frontend-integration-tests.yml
