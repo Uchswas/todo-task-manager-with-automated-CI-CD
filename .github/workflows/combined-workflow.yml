@@ -245,11 +245,15 @@ jobs:
         sudo docker stop test-postgres || true
         sudo docker rm test-postgres || true
 
-    if: success() && ((github.event_name == 'push' 
-      && github.ref matches 'refs/heads/(dev|main|release.*)') 
-      || (github.event_name == 'pull_request' 
-      && github.base_ref matches '^(dev|main|release.*)$'))
-
+    if: success() && (
+      (github.event_name == 'push' &&
+       (github.ref == 'refs/heads/dev' ||
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/heads/release'))) ||
+      (github.event_name == 'pull_request' &&
+       (github.base_ref == 'dev' ||
+        github.base_ref == 'main' ||
+        startsWith(github.base_ref, 'release'))))
 
   frontend-integration-tests:
     needs:
@@ -277,11 +281,15 @@ jobs:
       run: |
         npm run test:integration
 
-    if: success() && ((github.event_name == 'push' 
-      && github.ref matches 'refs/heads/(dev|main|release.*)') 
-      || (github.event_name == 'pull_request' 
-      && github.base_ref matches '^(dev|main|release.*)$'))
-
+    if: success() && (
+      (github.event_name == 'push' &&
+       (github.ref == 'refs/heads/dev' ||
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/heads/release'))) ||
+      (github.event_name == 'pull_request' &&
+       (github.base_ref == 'dev' ||
+        github.base_ref == 'main' ||
+        startsWith(github.base_ref, 'release'))))
 
   e2e-tests:
     needs:
@@ -392,7 +400,9 @@ jobs:
         sudo docker stop e2e-postgres || true
         sudo docker rm e2e-postgres || true
 
-    if: success() && github.event_name == 'pull_request' && (github.base_ref matches '^release.*$' || github.base_ref == 'main')
+    if: success() &&
+        github.event_name == 'pull_request' &&
+        (startsWith(github.base_ref, 'release') || github.base_ref == 'main')
 
   deploy-development:
     runs-on:
@@ -583,10 +593,10 @@ jobs:
   release-changelog:
     runs-on: self-hosted
     environment: production
-    if: github.event_name == 'pull_request' 
-      && github.event.action == 'closed' 
-      && github.base_ref matches '^release.*$'
-      && github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      startsWith(github.base_ref, 'release') &&
+      github.event.pull_request.merged == true
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
