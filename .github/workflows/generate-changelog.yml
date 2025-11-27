@@ -11,12 +11,11 @@ jobs:
   release:
     runs-on: self-hosted
     environment: production
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: release
+          ref: ${{ github.base_ref }}
           fetch-depth: 0
 
       - name: Get last tag
@@ -98,17 +97,17 @@ jobs:
         run: |
           # Create PR from release to main
           PR_TITLE="Release: ${{ steps.version.outputs.new_tag }}"
-          PR_BODY="This PR merges the release branch into main after successful e2e tests and changelog generation."
+          PR_BODY="This PR merges the ${{ github.base_ref }} branch into main after successful e2e tests and changelog generation."
           
           # Check if PR already exists
           EXISTING_PR=$(curl -sSL \
             -H "Authorization: Bearer ${GITHUB_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
-            "$GITHUB_API_URL/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:release&base=main&state=open" | \
+            "$GITHUB_API_URL/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${{ github.base_ref }}&base=main&state=open" | \
             python3 -c "import sys, json; prs = json.load(sys.stdin); print(prs[0]['number'] if prs else '')")
           
           if [ -n "$EXISTING_PR" ]; then
-            echo "PR #$EXISTING_PR already exists from release to main"
+            echo "PR #$EXISTING_PR already exists from ${{ github.base_ref }} to main"
             exit 0
           fi
           
@@ -121,7 +120,7 @@ jobs:
             --data "{
               \"title\": \"$PR_TITLE\",
               \"body\": \"$PR_BODY\",
-              \"head\": \"release\",
+              \"head\": \"${{ github.base_ref }}\",
               \"base\": \"main\"
             }")
           
@@ -135,4 +134,4 @@ jobs:
           fi
           
           PR_NUMBER=$(echo "$PR_BODY_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['number'])")
-          echo "Created PR #$PR_NUMBER from release to main"
+          echo "Created PR #$PR_NUMBER from ${{ github.base_ref }} to main"
