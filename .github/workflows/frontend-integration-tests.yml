@@ -1,15 +1,6 @@
 name: Frontend Integration Tests
 on:
-  pull_request:
-    branches:
-      - dev
-      - release
-      - main
-  push:
-    branches:
-      - dev
-      - release
-      - main
+  workflow_call:
 
 jobs:
   test:
