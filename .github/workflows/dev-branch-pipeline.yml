@@ -27,13 +27,13 @@ jobs:
 
   test-backend-integration:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
+    needs: [python-lint, test-backend-unit]
     uses: ./.github/workflows/backend-integration-tests.yml
     secrets: inherit
 
   test-frontend-integration:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
+    needs: [eslint, test-frontend-unit]
     uses: ./.github/workflows/frontend-integration-tests.yml
 
   deploy:
