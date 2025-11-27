@@ -1,9 +1,6 @@
 name: E2E Tests
 on:
-  pull_request:
-    branches:
-      - release
-      - main
+  workflow_call:
 
 jobs:
   e2e:

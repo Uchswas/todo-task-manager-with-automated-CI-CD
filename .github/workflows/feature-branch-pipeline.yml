@@ -1,0 +1,28 @@
+name: Feature Branch Pipeline
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dev
+      - release
+  pull_request:
+    branches-ignore:
+      - main
+      - dev
+      - release
+
+jobs:
+  python-lint:
+    uses: ./.github/workflows/python-lint.yaml
+
+  eslint:
+    uses: ./.github/workflows/es-lint.yaml
+
+  test-backend-unit:
+    uses: ./.github/workflows/backend-unit-tests.yml
+    secrets: inherit
+
+  test-frontend-unit:
+    uses: ./.github/workflows/frontend-unit-tests.yml
+

@@ -1,5 +1,6 @@
 name: Backend Unit Tests
-on: [push, pull_request]
+on:
+  workflow_call:
 
 jobs:
   test:
@@ -57,4 +58,5 @@ jobs:
         export TEST_DATABASE_URL="postgresql://${POSTGRES_TEST_USER}:${POSTGRES_TEST_PASSWORD}@localhost:5432/${POSTGRES_TEST_DB}"
         source venv/bin/activate
         pytest tests/unit -v
+
 
