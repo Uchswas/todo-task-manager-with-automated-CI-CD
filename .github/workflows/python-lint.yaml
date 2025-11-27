@@ -1,5 +1,6 @@
 name: Python Lint
-on: [push, pull_request]
+on:
+  workflow_call:
 jobs:
   lint:
     runs-on: [self-hosted, Linux, X64]

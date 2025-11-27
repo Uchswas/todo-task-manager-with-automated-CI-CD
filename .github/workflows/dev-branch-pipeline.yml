@@ -1,0 +1,40 @@
+name: Dev Branch Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    types: [closed]
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  python-lint:
+    uses: ./.github/workflows/python-lint.yaml
+
+  eslint:
+    uses: ./.github/workflows/es-lint.yaml
+
+  test-backend-unit:
+    uses: ./.github/workflows/backend-unit-tests.yml
+
+  test-frontend-unit:
+    uses: ./.github/workflows/frontend-unit-tests.yml
+
+  test-backend-integration:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
+    uses: ./.github/workflows/backend-integration-tests.yml
+
+  test-frontend-integration:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
+    uses: ./.github/workflows/frontend-integration-tests.yml
+
+  deploy:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit, test-backend-integration, test-frontend-integration]
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/development-deploy.yml
+    with:
+      branch: dev
+

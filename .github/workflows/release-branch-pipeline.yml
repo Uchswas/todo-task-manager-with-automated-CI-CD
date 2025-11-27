@@ -1,0 +1,41 @@
+name: Release Branch Pipeline
+
+on:
+  push:
+    branches:
+      - release
+  pull_request:
+    types: [closed]
+    branches:
+      - release
+
+jobs:
+  python-lint:
+    uses: ./.github/workflows/python-lint.yaml
+
+  eslint:
+    uses: ./.github/workflows/es-lint.yaml
+
+  test-backend-unit:
+    uses: ./.github/workflows/backend-unit-tests.yml
+
+  test-frontend-unit:
+    uses: ./.github/workflows/frontend-unit-tests.yml
+
+  test-backend-integration:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
+    uses: ./.github/workflows/backend-integration-tests.yml
+
+  test-frontend-integration:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit]
+    uses: ./.github/workflows/frontend-integration-tests.yml
+
+  test-e2e:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit, test-backend-integration, test-frontend-integration]
+    uses: ./.github/workflows/e2e-tests.yml
+
+  generate-changelog:
+    needs: [python-lint, eslint, test-backend-unit, test-frontend-unit, test-backend-integration, test-frontend-integration, test-e2e]
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    uses: ./.github/workflows/generate-changelog.yml
+

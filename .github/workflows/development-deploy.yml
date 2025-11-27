@@ -1,23 +1,23 @@
 name: Deploy to Development
 
 on:
-  workflow_dispatch:
-  pull_request:
-    types: [closed]
-    branches:
-      - dev
+  workflow_call:
+    inputs:
+      branch:
+        required: false
+        type: string
+        default: 'dev'
 
 jobs:
   deploy:
     name: Deploy to Development Server
     runs-on: [self-hosted, Linux, X64]
     environment: development
-    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: ${{ inputs.branch || 'dev' }}
 
       - name: Set up SSH
         run: |
