@@ -6,6 +6,7 @@ jobs:
   e2e:
     name: Run E2E Tests
     runs-on: [self-hosted, Linux, X64]
+    environment: development
     steps:
     - name: Checkout code
       uses: actions/checkout@v4

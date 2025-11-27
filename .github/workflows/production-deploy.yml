@@ -12,6 +12,7 @@ jobs:
   deploy:
     name: Deploy to Production Server
     runs-on: [self-hosted, Linux, X64]
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
