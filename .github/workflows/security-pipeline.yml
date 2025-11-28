@@ -35,11 +35,10 @@ jobs:
       
       - name: Run Snyk for Python Dependencies
         run: |
-          "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=requirements.txt --package-manager=pip --sarif-file-output=../snyk-backend.sarif
+          "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=requirements.txt --package-manager=pip --sarif-file-output=../snyk-backend.sarif || true
         working-directory: task-manager/backend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true 
       
       - name: Install Node dependencies
         working-directory: task-manager/frontend
@@ -47,11 +46,10 @@ jobs:
       
       - name: Run Snyk for JavaScript Dependencies
         run: |
-          "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=package.json --package-manager=npm --sarif-file-output=../snyk-frontend.sarif
+          "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=package.json --package-manager=npm --sarif-file-output=../snyk-frontend.sarif || true
         working-directory: task-manager/frontend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
       - name: Install Trivy CLI
         run: |
