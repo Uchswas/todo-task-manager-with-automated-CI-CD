@@ -36,6 +36,11 @@ jobs:
     needs: [eslint, test-frontend-unit]
     uses: ./.github/workflows/frontend-integration-tests.yml
 
+  security-scan:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    usues: ./.github/workflows/security-check.yml
+    secrets: inherit
+
   deploy:
     if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/development-deploy.yml
