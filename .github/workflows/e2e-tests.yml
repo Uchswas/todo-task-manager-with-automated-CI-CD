@@ -94,7 +94,10 @@ jobs:
         
         npm run test:e2e -- --reporter=line 2>&1 | tee test-output.log
         
-        FAILED=$(grep -oP '\d+(?= failed)' test-output.log | head -1 || echo "0")
+        FAILED=$(grep -oP '\d+(?= failed)' test-output.log | head -1)
+        if [ -z "$FAILED" ]; then
+          FAILED=0
+        fi
         echo "Failed tests: $FAILED"
         
         if [ "$FAILED" -le 10 ]; then
