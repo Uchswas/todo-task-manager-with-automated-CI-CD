@@ -88,11 +88,11 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: snyk-backend-results
-          path: snyk-backend.sarif
+          path: task-manager/snyk-backend.sarif
 
       - name: Save Snyk Frontend SARIF
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: snyk-frontend-results
-          path: snyk-frontend.sarif
+          path: task-manager/snyk-frontend.sarif
