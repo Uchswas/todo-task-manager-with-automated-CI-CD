@@ -1,11 +1,7 @@
-name: Security Pipeline
+name: Security Workflow
 
 on:
-  push:
-    branches-ignore:
-      - main
-      - dev
-      - release
+  workflow_call:
 
 jobs:
   security-scan:
@@ -51,7 +47,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Install Gitleaks (secret scan)
+      - name: Install Gitleaks
         run: |
           GITLEAKS_VERSION=8.18.2
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -o gitleaks.tar.gz
