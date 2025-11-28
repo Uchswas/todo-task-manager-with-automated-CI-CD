@@ -56,7 +56,7 @@ jobs:
           docker build -t task-manager-backend:${{ github.sha }} .
       
       - name: Run Trivy Scan on Backend
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: 'task-manager-backend:${{ github.sha }}'
           format: 'table'
@@ -70,7 +70,7 @@ jobs:
           docker build -t task-manager-frontend:${{ github.sha }} .
       
       - name: Run Trivy Scan on Frontend
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: 'task-manager-frontend:${{ github.sha }}'
           format: 'table'
@@ -79,7 +79,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Generate Trivy Report (Backend)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: 'task-manager-backend:${{ github.sha }}'
           format: 'sarif'
@@ -87,7 +87,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Generate Trivy Report (Frontend)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: 'task-manager-frontend:${{ github.sha }}'
           format: 'sarif'
