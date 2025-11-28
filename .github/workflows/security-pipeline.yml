@@ -51,49 +51,21 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         continue-on-error: true
 
-      - name: Build Backend Docker Image
-        working-directory: task-manager/backend
+      - name: Install Trivy CLI
         run: |
-          docker build -t task-manager-backend:${{ github.sha }} .
-      
-      - name: Run Trivy Scan on Backend
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: 'task-manager-backend:${{ github.sha }}'
-          format: 'table'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'
-          ignore-unfixed: true
+          TRIVY_VERSION=0.53.0
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v${TRIVY_VERSION}
+          trivy --version
 
-      - name: Build Frontend Docker Image
-        working-directory: task-manager/frontend
+      - name: Run Trivy FS Scan on Backend
         run: |
-          docker build -t task-manager-frontend:${{ github.sha }} .
-      
-      - name: Run Trivy Scan on Frontend
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: 'task-manager-frontend:${{ github.sha }}'
-          format: 'table'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'
-          ignore-unfixed: true
+          trivy fs --format table --severity CRITICAL,HIGH --exit-code 0 task-manager/backend
+          trivy fs --format sarif --output trivy-backend-results.sarif --severity CRITICAL,HIGH task-manager/backend
 
-      - name: Generate Trivy Report (Backend)
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: 'task-manager-backend:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-backend-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Generate Trivy Report (Frontend)
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: 'task-manager-frontend:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-frontend-results.sarif'
-          severity: 'CRITICAL,HIGH'
+      - name: Run Trivy FS Scan on Frontend
+        run: |
+          trivy fs --format table --severity CRITICAL,HIGH --exit-code 0 task-manager/frontend
+          trivy fs --format sarif --output trivy-frontend-results.sarif --severity CRITICAL,HIGH task-manager/frontend
 
       - name: Upload Trivy Results to GitHub Security
         uses: github/codeql-action/upload-sarif@v2
