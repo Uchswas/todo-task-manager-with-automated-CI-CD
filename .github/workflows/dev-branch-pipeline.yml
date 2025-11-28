@@ -38,7 +38,7 @@ jobs:
 
   security-scan:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    usues: ./.github/workflows/security-check.yml
+    uses: ./.github/workflows/security-check.yml
     secrets: inherit
 
   deploy:
@@ -47,4 +47,3 @@ jobs:
     secrets: inherit
     with:
       branch: dev
-
