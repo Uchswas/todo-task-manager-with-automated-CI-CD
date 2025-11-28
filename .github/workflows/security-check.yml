@@ -1,5 +1,4 @@
 name: Security Workflow
-
 on:
   workflow_call:
 
@@ -7,74 +6,74 @@ jobs:
   security-scan:
     runs-on: [self-hosted, Linux, X64]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
-      - name: Install Python dependencies
-        run: |
-          pip install -r task-manager/backend/requirements.txt
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install Python dependencies
+      run: |
+        pip install -r task-manager/backend/requirements.txt
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
 
-      - name: Install Snyk CLI
-        run: npm install snyk@1.1290.0 --prefix .snyk-cli
-      
-      - name: Run Snyk for Python Dependencies
-        run: |
-          "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=requirements.txt --package-manager=pip --sarif-file-output=../snyk-backend.sarif || true
-        working-directory: task-manager/backend
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      
-      - name: Install Node dependencies
-        working-directory: task-manager/frontend
-        run: npm install
-      
-      - name: Run Snyk for JavaScript Dependencies
-        run: |
-          "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=package.json --package-manager=npm --sarif-file-output=../snyk-frontend.sarif || true
-        working-directory: task-manager/frontend
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    - name: Install Snyk CLI
+      run: npm install snyk@1.1290.0 --prefix .snyk-cli
+    
+    - name: Run Snyk for Python Dependencies
+      run: |
+        "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=requirements.txt --package-manager=pip --sarif-file-output=../snyk-backend.sarif || true
+      working-directory: task-manager/backend
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    
+    - name: Install Node dependencies
+      working-directory: task-manager/frontend
+      run: npm install
+    
+    - name: Run Snyk for JavaScript Dependencies
+      run: |
+        "${{ github.workspace }}/.snyk-cli/node_modules/.bin/snyk" test --severity-threshold=high --file=package.json --package-manager=npm --sarif-file-output=../snyk-frontend.sarif || true
+      working-directory: task-manager/frontend
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Install Gitleaks
-        run: |
-          GITLEAKS_VERSION=8.18.2
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -o gitleaks.tar.gz
-          sudo tar -xzf gitleaks.tar.gz -C /usr/local/bin gitleaks
-          gitleaks version
+    - name: Install Gitleaks
+      run: |
+        GITLEAKS_VERSION=8.18.2
+        curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -o gitleaks.tar.gz
+        sudo tar -xzf gitleaks.tar.gz -C /usr/local/bin gitleaks
+        gitleaks version
 
-      - name: Run Gitleaks
-        run: |
-          gitleaks detect -s . -f sarif -r gitleaks-results.sarif || true
+    - name: Run Gitleaks
+      run: |
+        gitleaks detect -s . -f sarif -r gitleaks-results.sarif || true
 
-      - name: Save Snyk Backend SARIF
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: snyk-backend-results
-          path: task-manager/snyk-backend.sarif
+    - name: Save Snyk Backend SARIF
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: snyk-backend-results
+        path: task-manager/snyk-backend.sarif
 
-      - name: Save Snyk Frontend SARIF
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: snyk-frontend-results
-          path: task-manager/snyk-frontend.sarif
+    - name: Save Snyk Frontend SARIF
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: snyk-frontend-results
+        path: task-manager/snyk-frontend.sarif
 
-      - name: Save Gitleaks SARIF
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: gitleaks-results
-          path: gitleaks-results.sarif
+    - name: Save Gitleaks SARIF
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: gitleaks-results
+        path: gitleaks-results.sarif
