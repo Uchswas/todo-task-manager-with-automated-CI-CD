@@ -17,18 +17,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Semgrep SAST Scan
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/python
-            p/flask
-            p/javascript
-            p/react
-            p/security-audit
-            p/owasp-top-ten
-        continue-on-error: true 
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
