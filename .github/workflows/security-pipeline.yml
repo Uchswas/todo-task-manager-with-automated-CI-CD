@@ -51,35 +51,16 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Install Trivy CLI
+      - name: Install Gitleaks (secret scan)
         run: |
-          TRIVY_VERSION=0.53.0
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin v${TRIVY_VERSION}
-          trivy --version
+          GITLEAKS_VERSION=8.18.2
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -o gitleaks.tar.gz
+          sudo tar -xzf gitleaks.tar.gz -C /usr/local/bin gitleaks
+          gitleaks version
 
-      - name: Run Trivy FS Scan on Backend
+      - name: Run Gitleaks
         run: |
-          trivy fs --format table --severity CRITICAL,HIGH --exit-code 0 task-manager/backend
-          trivy fs --format sarif --output trivy-backend-results.sarif --severity CRITICAL,HIGH task-manager/backend
-
-      - name: Run Trivy FS Scan on Frontend
-        run: |
-          trivy fs --format table --severity CRITICAL,HIGH --exit-code 0 task-manager/frontend
-          trivy fs --format sarif --output trivy-frontend-results.sarif --severity CRITICAL,HIGH task-manager/frontend
-
-      - name: Save Trivy Backend SARIF
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: trivy-backend-results
-          path: trivy-backend-results.sarif
-
-      - name: Save Trivy Frontend SARIF
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: trivy-frontend-results
-          path: trivy-frontend-results.sarif
+          gitleaks detect -s . -f sarif -r gitleaks-results.sarif || true
 
       - name: Save Snyk Backend SARIF
         if: always()
@@ -94,3 +75,10 @@ jobs:
         with:
           name: snyk-frontend-results
           path: task-manager/snyk-frontend.sarif
+
+      - name: Save Gitleaks SARIF
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: gitleaks-results
+          path: gitleaks-results.sarif
