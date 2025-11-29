@@ -26,3 +26,7 @@ jobs:
   test-frontend-unit:
     uses: ./.github/workflows/frontend-unit-tests.yml
 
+  security-scan:
+    uses: ./.github/workflows/security-check.yml
+    secrets: inherit
+
