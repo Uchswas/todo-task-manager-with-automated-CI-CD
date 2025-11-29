@@ -59,21 +59,21 @@ jobs:
 
     - name: Save Snyk Backend SARIF
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: snyk-backend-results
         path: task-manager/snyk-backend.sarif
 
     - name: Save Snyk Frontend SARIF
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: snyk-frontend-results
         path: task-manager/snyk-frontend.sarif
 
     - name: Save Gitleaks SARIF
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: gitleaks-results
         path: gitleaks-results.sarif
