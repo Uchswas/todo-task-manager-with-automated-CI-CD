@@ -108,9 +108,8 @@ Ahmed:
 2.  **Integration Test** ([commit 94a75af](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/94a75af))
 3.  **Security Workflow** ([commit d8ce9cc](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/d8ce9cc))
 
-Uchswas
-Uchswas:
 
+Uchswas:
 1. **Dockerized Setup & Ansible Deployment** ([commit fc1e80f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/16/commits/fc1e80f241f5ff37d6c733c41d20ecbe2c003006), [commit beac25f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/commits/beac25f54a06f53726d66692e61b5724f8f02f41))
 2. **GitHub Workflows & Workflow Pipeline** ([commit 6dcd152](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/49/commits/6dcd152af3f364f4f734456e5b779f30c4b3dcc0), [commit e2d9118](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/commits/e2d911874ec871e500ef9bac765045d540480f23))
 3. **Code Cleaning and Hard-Coded Secrets & Variables Removal** ([commit 18942a4](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/18942a47ae0ae412461e879fdfd742bc5e20502a), [commit c6e81d6](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/c6e81d60652a8420e8f8db61a81376835e8ffc4a))
