@@ -2,13 +2,13 @@
 
 #### Introduction
 
-Todo/Task Manager is a full-stack web application that aims to help users organize and track their daily tasks. It consists of three main components: a user interface frontend based on React, an API layer for data processing that is based on Flask, and a PostgreSQL database that stores all user and task information. Users can create tasks with different priorities and categories, track completion status, and view statistics about their productivity.
+Todo/Task Manager is a full-stack web application that aims to help users organize and track their daily tasks. It consists of three main components: a user interface frontend based on React, an API layer for data processing built on Flask, and a PostgreSQL database that stores all user and task information. Users can create tasks with different priorities and categories, track completion status, and view statistics about their productivity.
 
 #### Problem Statement and Motivation
 
-Manually building, testing, and deploying our applications becomes inefficient and error prone as it grows. With the application consisting of several components, even small changes to a single component can cause unexpected bugs. This lack of automation becomes problematic as it slows down the overall progress and decreases the reliability of our application. This not only affects developers but also users who can experience downtime or bugs in new releases which leads to lower trust in our application.
+Manually building, testing, and deploying our applications becomes inefficient and error-prone as it grows. With the application consisting of several components, even small changes to a single component can cause unexpected bugs. This lack of automation becomes problematic as it slows down the overall progress and decreases the reliability of our application. This not only affects developers but also users who can experience downtime or bugs in new releases, which leads to lower trust in our application.
 
-As a result, we needed a solution that makes our integration and delivery operations faster and more reliable. We decided to implement a fully automated CI/CD pipeline that is mainly based on GitHub Actions. Using different triggering operations (ex: pushes, pull requests), the CI workflow runs automatically and a combination of linting and different test types are executed depending on the target branch. Additionally, we require all code changes targeting shared branches (`main`, `dev`, `release`) to be integrated through PRs that must be reviewed and approved. This is done through GitHub's branch protection rules and ensures that only reviewed and tested code reaches these branches. The only actions that require user interaction in this automated pipeline are PR related actions (creation, review, merging). 
+As a result, we needed a solution that makes our integration and delivery operations faster and more reliable. We decided to implement a fully automated CI/CD pipeline, primarily based on GitHub Actions. Using different triggering operations (ex: pushes, pull requests), the CI workflow runs automatically and a combination of linting and different test types are executed depending on the target branch. Additionally, we require all code changes targeting shared branches (`main`, `dev`, `release`) to be integrated through PRs that must be reviewed and approved. This is done through GitHub's branch protection rules and ensures that only reviewed and tested code reaches these branches. The only actions that require user interaction in this automated pipeline are PR related actions (creation, review, merging). 
 
 The CD part of our pipeline extends automation to the application's delivery and environment management. Once the CI pipeline completes successfully and code is merged to either the `dev` or `main` branch, Ansible playbooks automatically build and deploy the application to the proper environment. We use Docker images and containers to maintain consistency across environments and eliminate configuration inconsistencies. All of this is done while keeping security in mind: we store sensitive secrets and credentials using the GitHub Secret Manager. We also have a stage in the workflow that scans the code for leaking secrets and scans both our frontend and backend dependencies for high risk vulnerabilities. Using this workflow, our pipeline enables faster, more secure, and more reliable releases of our application with minimal manual effort.
 
@@ -18,13 +18,15 @@ The CD part of our pipeline extends automation to the application's delivery and
 1. Wrote unit and integration tests for the backend using pytest. We also wrote frontend tests using Jest.
 2. Used Playwright to build an automated end-to-end (E2E) testing suite. It checks the whole app on Chrome, Firefox, and Safari for things like logging in, managing tasks, and categories.
 3. Set up Pylint and ESLint in our CI pipeline. These tools check our code for style problems and errors.
-4. Used Docker and Docker Compose to package our database, backend, and frontend. This makes sure the app runs the same everywhere.
-5. Added Snyk and Gitleaks to our pipeline. Snyk finds security problems in our code's dependencies, and Gitleaks finds secret keys that might have accidentally been committed.
-6. Used Ansible to write scripts that set up servers and put our app's Docker containers on them.
-7. Put all our app's settings in one place and moved sensitive passwords and keys to GitHub Secrets. This made our app more secure.
-8. Created a release process that automatically adds version tags, makes a list of changes (changelog), and handles pull requests for new releases.
-9. Enabled GitHub branch protection rules to make sure all code is reviewed before merging.
-10. Configured the pipeline to save security reports as artifacts so we can check them later.
+4. Cleaned up the codebase by centralizing configuration and removing hard-coded values and secrets. The app previously relied on multiple .env files with many hard-coded secrets and variables. We now use only one `.env` file and GitHub environment secrets & variables in our CI/CD pipeline, which has significantly improved security and maintainability.
+5. Used Docker and Docker Compose to package our database, backend, and frontend. This ensures the app runs consistently everywhere.
+6. Used Ansible to automate server provisioning and deploy the application’s Docker containers.
+7. Implemented GitHub Actions workflows for unit, integration, and end-to-end testing, as well as automated deployment to dev and production servers.
+8. Added Snyk and Gitleaks to our pipeline. Snyk finds security problems in our code's dependencies, and Gitleaks finds secret keys that might have accidentally been committed.
+9. Implemented branch-specific `workflow pipeline` to control the execution order of workflows. This ensures tests and deployment run in the correct sequence.
+10. Created a release process that automatically adds version tags, makes a list of changes (changelog), and sends a pull request to the `main` branch for new release deployment.
+11. Enabled GitHub branch protection rules to make sure all code is reviewed before merging.
+12. Configured the pipeline to save security reports as artifacts so we can check them later.
 
 #### Technical Approach: Updated Pipeline Figure
 
@@ -38,42 +40,47 @@ We use VS Code as the main IDE to write and debug code locally before committing
 
 ##### Continuous Integration (PR to `dev`)
 
-When a developer creates a PR to be merged into the `dev` branch, GitHub Actions runs the CI workflow. The workflow exectues backend and frontend linting using Pylint and ESLint, respectively. The linting step is followed by unit and integration tests to ensure that the PR changes did not break functionality and all testcases must be successful for the workflow to continue. Security checks are then run to ensure no secrets were committed and no vulnerabilities exist in our dependencies. The PR must have a reviewer where the reviewer comments or requests changes. The workflow runs using a self hosted action runner.
+When a developer creates a PR from a feature branch to be merged into the `dev` branch, GitHub Actions runs the CI workflow. The workflow executes backend and frontend linting using Pylint and ESLint, respectively. The linting step is followed by unit and integration tests to ensure that the PR changes did not break functionality and all testcases must be successful for the workflow to continue. Security checks are then run to ensure no secrets were committed and no vulnerabilities exist in our dependencies. The PR must have a reviewer who provides comments or requests changes. The workflow runs using a self hosted action runner.
 
 ##### Provision Test Environment (PR merged to `dev`)
 
-After a PR is merged into `dev`, a new workflow is triggered to build and validate the application in a controlled test environment. We build Docker images from the latest commit and use Ansible to automatically configure and provision the test server. Ansible ensures that the server has all the required dependencies, system packages, and configurations needed for the application’s Docker containers to run smoothly. Once the environment is ready, the newly built images are deployed. The testing environment is hosted on Google Cloud. This stage is considered successful when the Docker images are deployed and the environment is correctly configured. Developers use this environment for regression testing.
+After a PR is merged into `dev`, a new workflow is triggered to build and deploy the application in a controlled test environment. We build Docker images from the latest commit and use Ansible to automatically configure and provision the test server. Ansible ensures that the server has all the required dependencies, system packages, and configurations needed for the application’s Docker containers to run smoothly. Once the environment is ready, the newly built images are deployed. The testing environment is hosted on Google Cloud. This stage is considered successful when the Docker images are deployed and the environment is correctly configured. Developers use this environment for regression testing.
 
 ##### User Acceptance Testing (PR from `dev` to `release`)
 
 When we are ready for a new release, we create a PR from `dev` to `release`. This triggers another workflow that repeats backend and frontend linting, integration testing, and security checks. E2E tests are also performed using Playwright to simulate real user interactions with the system. The goal of this stage is to validate the application’s overall behavior and functionality before preparing for the production release.
 
-##### Pre-Deploy Stage (PR merged to `release`)
+##### Pre-Deployment Stage (PR merged to `release`)
 
-Once the PR is approved and merged into the `release` branch, a new workflow is executed that generates a changelog summarizing all pull requests since the previous release. A new PR is then created to the main branch and security checks run again to ensure there are no vulnerabilities or leaked secrets.
+Once the PR is approved and merged into the `release` branch, a new workflow is executed that generates a changelog summarizing all pull requests since the previous release. It also automatically tags the merge commit with a new release tag following the project’s versioning scheme. A new PR is then automatically created by the GitHub bot in the main branch.
+
+#### Pre-Deployment Validation (PR from `release` to `main`)
+
+After the creation of an automated PR from release to the  main branch, all the tests are run for the final validation in the merged code. This includes unit tests, integration tests, followed by E2E tests and security tests. 
 
 ##### Deploy to Production (PR merged to `main`)
 
-When the final PR is merged into the `main` branch, the workflow automatically tags the merge commit with a new release tag following the project’s versioning scheme. It then builds the final Docker images from this tagged commit. Once the built images are ready, Ansible connects to the production server and performs a rolling restart of the application containers where it sequentially stops and replaces each container with the updated version. The production server is hosted on Google Cloud. The deployment is considered successful once all services are healthy and stable.
+When the final PR is merged into the `main` branch, the workflow builds the final Docker images from this tagged commit. Once the built images are ready, Ansible connects to the `production` server and performs a rolling restart of the application containers, sequentially stopping and replacing each container with the updated version. The production server is hosted on Google Cloud. The deployment is considered successful once all services are healthy and stable.
 
 
 #### Use of Generative AI
 
-We mainly used ChatGPT throughout this project for debugging and getting examples. For instance, when we were working on tests, ChatGPT gave us examples of how pytest, Jest, and Playwright work, and provided guidance for test case structure. It was also very helpful for debugging errors we encountered.
+We mainly used ChatGPT throughout this project for debugging and getting examples. For instance, when we were working on tests, ChatGPT provided us with examples of how pytest, Jest, and Playwright work, as well as guidance on test case structure. It was also very helpful for debugging errors in workflows we encountered.
 
 #### Retrospective: What Worked
 
-1. Dividing the work clearly helped us. Ahmed focused on testing and linting, and Uchswas focused on infrastructure and deployment. This allowed us to work in parallel.
+1. Dividing the work clearly helped us. Ahmed focused on testing and linting, and Uchswas focused on infrastructure, workflows, and deployment. This allowed us to work in parallel.
 2. GitHub Issues and the project board kept us organized. We could see exactly what tasks were being worked on and what was left.
-3. Using feature branches kept our main code stable. We created a separate branch for each task and only merged it when it was done.
+3. Using feature branches kept our main code stable. We created a separate branch for each task and merged it only when it was complete.
 4. Docker solved our environment problems. It made sure the app ran the same way on everyone's computer.
 
 #### Retrospective: What Didn't Work
 
 1. VCL only lets the person who provisioned the VM connect, and they must stay on the same Wi‑Fi/mobile network, or the firewall blocks SSH, so using VCL wasn’t an option.
 2. We didn't have sudo access on the VCL servers. This meant we couldn't use Ansible to install the system packages we needed.
-3. Only one person had access to the GitHub settings. This caused delays when we needed to change runner settings and that person wasn't available.
+3. Only one person had access to the GitHub settings, for example, adding runners, adding GitHub secrets, and variables in the appropriate environment. This caused delays when we needed to change the settings, and that person wasn't available.
 4. A few of the Playwright tests were flaky which took some time to debug.
+5. At first, our workflows didn’t run in a strict order, which caused some issues. For example, the deployment workflow could run before the test workflows, so a buggy version might get deployed and only then the tests would fail.
 
 #### Retrospective: What We Would Do Differently
 
@@ -86,9 +93,13 @@ We mainly used ChatGPT throughout this project for debugging and getting example
 
 Ahmed mainly focused on linting, testing, and the security workflow. He wrote unit and integration tests for the backend using pytest and for the frontend using Jest. He set up Playwright and wrote end-to-end tests for features like logging in, managing tasks, and the dashboard. He also fixed the code style issues in the backend and helped integrate the security scanning tools into the pipeline.
 
+Uchswas focused on writing configuration codes. It includes packaging the systems (frontend, backend, database) using Docker, and deploying the containers using Ansible, as well as provisioning servers on VCL and Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using a branch-specific pipeline. 
+
 #### Security Extra Credit
 
 Ahmed set up the automated security scanning in the CI/CD pipeline which uses two tools. First, Snyk checks for security problems in the project's dependencies. Snyk scans both the Python backend and JavaScript frontend code for known vulnerabilities. Second, Gitleaks finds any secret keys or passwords that might have accidentally been committed to the code's history. Gitleaks helps catch these before they become a bigger problem. All the results from these security scans are saved and uploaded to GitHub.
+
+Uchswas cleaned up the codebase to handle configuration and secrets. Before, it used multiple .env files for different parts of the system (frontend, backend, database), which was hard to manage and could easily lead to inconsistencies and security issues. Moreover, there were lots of hard-coded secrets and variables that were removed from the code and switched to using environment-based configuration instead. He then moved sensitive values and some non-sensitive ones, such as HOST_IP_ADDRESS,  into GitHub environment secrets and variables. It  makes the setup more secure and less exposed.
 
 #### Technical Commits
 
