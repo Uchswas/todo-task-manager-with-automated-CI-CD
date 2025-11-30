@@ -36,15 +36,15 @@ The CD part of our pipeline extends automation to the application's delivery and
 
 ##### Code Stage
 
-We use VS Code as the main IDE to write and debug code locally before committing the changes to GitHub. Github serves as the central repository and version control system. All source code and configuration files are stored within the GitHub repository.
+We use VS Code as the main IDE to write and debug code locally before committing the changes to GitHub. GitHub serves as the central repository and version control system. All source code and configuration files are stored within the GitHub repository.
 
 ##### Continuous Integration (PR to `dev`)
 
-When a developer creates a PR from a feature branch to be merged into the `dev` branch, GitHub Actions runs the CI workflow. The workflow executes backend and frontend linting using Pylint and ESLint, respectively. The linting step is followed by unit and integration tests to ensure that the PR changes did not break functionality and all testcases must be successful for the workflow to continue. Security checks are then run to ensure no secrets were committed and no vulnerabilities exist in our dependencies. The PR must have a reviewer who provides comments or requests changes. The workflow runs using a self hosted action runner.
+When a developer creates a PR from a feature branch to be merged into the `dev` branch, GitHub Actions runs the CI workflow. The workflow executes backend and frontend linting using Pylint and ESLint, respectively. The linting step is followed by unit and integration tests to ensure that the PR changes did not break functionality. All testcases must be successful for the workflow to continue. Security checks are then run to ensure no secrets were committed and no vulnerabilities exist in our dependencies. The PR must have a reviewer who provides comments or requests changes. The workflow runs using a self-hosted action runner.
 
 ##### Provision Test Environment (PR merged to `dev`)
 
-After a PR is merged into `dev`, a new workflow is triggered to build and deploy the application in a controlled test environment. We build Docker images from the latest commit and use Ansible to automatically configure and provision the test server. Ansible ensures that the server has all the required dependencies, system packages, and configurations needed for the application’s Docker containers to run smoothly. Once the environment is ready, the newly built images are deployed. The testing environment is hosted on Google Cloud. This stage is considered successful when the Docker images are deployed and the environment is correctly configured. Developers use this environment for regression testing.
+After a PR is merged into `dev`, a new workflow is triggered to build and deploy the application in a controlled test environment. We build Docker images from the latest commit and use Ansible to automatically configure and provision the test server. Ansible ensures that the server has all the required dependencies, system packages, and configurations needed for the application’s Docker containers to run smoothly. Once the environment is ready, the newly built images are deployed. The testing environment is hosted on Google Cloud. This stage is considered successful when the Docker images are deployed, and the environment is correctly configured. Developers use this environment for regression testing.
 
 ##### User Acceptance Testing (PR from `dev` to `release`)
 
@@ -54,7 +54,7 @@ When we are ready for a new release, we create a PR from `dev` to `release`. Thi
 
 Once the PR is approved and merged into the `release` branch, a new workflow is executed that generates a changelog summarizing all pull requests since the previous release. It also automatically tags the merge commit with a new release tag following the project’s versioning scheme. A new PR is then automatically created by the GitHub bot in the main branch.
 
-#### Pre-Deployment Validation (PR from `release` to `main`)
+##### Pre-Deployment Validation (PR from `release` to `main`)
 
 After the creation of an automated PR from release to the  main branch, all the tests are run for the final validation in the merged code. This includes unit tests, integration tests, followed by E2E tests and security tests. 
 
@@ -65,7 +65,7 @@ When the final PR is merged into the `main` branch, the workflow builds the fina
 
 #### Use of Generative AI
 
-We mainly used ChatGPT throughout this project for debugging and getting examples. For instance, when we were working on tests, ChatGPT provided us with examples of how pytest, Jest, and Playwright work, as well as guidance on test case structure. It was also very helpful for debugging errors in workflows we encountered.
+We mainly used ChatGPT throughout this project for debugging and getting examples. For instance, when we were working on tests, ChatGPT provided us with examples of how pytest, Jest, and Playwright work, as well as guidance on test case structure. It was very helpful for debugging errors in workflows we encountered. Generative AI was also used to findout hard-coded secrets in codebases and replace it with approcilate enviroment varibales.
 
 #### Retrospective: What Worked
 
@@ -79,21 +79,21 @@ We mainly used ChatGPT throughout this project for debugging and getting example
 1. VCL only lets the person who provisioned the VM connect, and they must stay on the same Wi‑Fi/mobile network, or the firewall blocks SSH, so using VCL wasn’t an option.
 2. We didn't have sudo access on the VCL servers. This meant we couldn't use Ansible to install the system packages we needed.
 3. Only one person had access to the GitHub settings, for example, adding runners, adding GitHub secrets, and variables in the appropriate environment. This caused delays when we needed to change the settings, and that person wasn't available.
-4. A few of the Playwright tests were flaky which took some time to debug.
-5. At first, our workflows didn’t run in a strict order, which caused some issues. For example, the deployment workflow could run before the test workflows, so a buggy version might get deployed and only then the tests would fail.
+4. A few of the Playwright tests were flaky, which took some time to debug.
+5. At first, our workflows didn’t run in a strict order, which caused some issues. For example, the deployment workflow could run before the test workflows, so a buggy version might get deployed, and then we notice some tests fail. It also created some unnecessary test calls. For example, when we noticed the unit tests failed, we should not proceed to intergration test as it is totally unnecessary.
 
 #### Retrospective: What We Would Do Differently
 
 1. Use Google Cloud from the start. We wasted time trying to make VCL work.
 2. Set deadlines for every task. This would help us catch delays earlier.
 3. Break large tasks into smaller pieces. This would make it easier to see our progress.
-4. Add extra time to our estimates. Debugging usually took longer than we thought it would.
+4. Add extra time to our estimates. Debugging took longer than we thought it would.
 
 #### Who Did What
 
 Ahmed mainly focused on linting, testing, and the security workflow. He wrote unit and integration tests for the backend using pytest and for the frontend using Jest. He set up Playwright and wrote end-to-end tests for features like logging in, managing tasks, and the dashboard. He also fixed the code style issues in the backend and helped integrate the security scanning tools into the pipeline.
 
-Uchswas focused on writing configuration codes. It includes packaging the systems (frontend, backend, database) using Docker, and deploying the containers using Ansible, as well as provisioning servers on VCL and Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using a branch-specific pipeline. 
+Uchswas focused on writing configuration codes. It includes packaging the systems (frontend, backend, database) using Docker, and deploying the containers using Ansible, as well as provisioning servers on VCL and Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using a `branch-specific workflow pipeline`. 
 
 #### Security Extra Credit
 
@@ -107,3 +107,11 @@ Ahmed:
 1.  **Fixing Linting Issues** ([commit 6865427](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/6865427))
 2.  **Integration Test** ([commit 94a75af](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/94a75af))
 3.  **Security Workflow** ([commit d8ce9cc](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/d8ce9cc))
+
+Uchswas
+Uchswas:
+
+1. **Dockerized Setup & Ansible Deployment** ([commit fc1e80f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/16/commits/fc1e80f241f5ff37d6c733c41d20ecbe2c003006), [commit beac25f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/commits/beac25f54a06f53726d66692e61b5724f8f02f41))
+2. **GitHub Workflows & Workflow Pipeline** ([commit 6dcd152](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/49/commits/6dcd152af3f364f4f734456e5b779f30c4b3dcc0), [commit e2d9118](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/commits/e2d911874ec871e500ef9bac765045d540480f23))
+3. **Code Cleaning and Hard-Coded Secrets & Variables Removal** ([commit 18942a4](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/18942a47ae0ae412461e879fdfd742bc5e20502a), [commit c6e81d6](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/c6e81d60652a8420e8f8db61a81376835e8ffc4a))
+
