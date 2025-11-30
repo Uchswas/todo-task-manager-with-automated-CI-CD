@@ -1,4 +1,4 @@
-# Todo/Task Manager DevOps Pipeline
+# Todo/Task Manager DevOps Pipeline 
 
 ## Problem Statement
 The problem is that as our Todo/Task Manager application continues to grow, manually building, testing, and deploying becomes inefficient and prone to errors. Since the application comprises several components (backend API, React frontend, and PostgreSQL database), even small changes in a single component can cause inconsistencies and/or unexpected bugs. This is important because little to no automation slows down the overall progress and decreases the reliability of our application. These challenges not only affect developers but also users who can experience downtime or bugs in new releases which leads to lower trust in the application.
