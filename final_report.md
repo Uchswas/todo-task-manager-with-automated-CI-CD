@@ -15,16 +15,16 @@ The CD part of our pipeline extends automation to the application's delivery and
 
 #### Summarized Accomplishments
 
-1. Wrote Unit and Integration tests for the backend using pytest. We also wrote frontend tests using Jest.  [ [PR #3](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/3), [PR #11](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/11) ]
-2. Used Playwright to build an automated end-to-end (E2E) testing suite. It checks the entire app on Chrome, Firefox, and Safari for features such as logging in, managing tasks, and categories. [ [PR #23](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/23) ]
-3. Set up Pylint and ESLint in our CI pipeline. These tools check our code for style problems and errors. [ [PR #12](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/12) ]
-4. Cleaned up the codebase by centralizing configuration and removing hard-coded values and secrets. The app previously relied on multiple .env files with many hard-coded secrets and variables. We now use only one `.env` file and GitHub environment secrets & variables in our CI/CD pipeline, which has significantly improved security and maintainability. [ [PR #26](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/files) ]
-5. Used Docker and Docker Compose to package our database, backend, and frontend. This ensures the app runs consistently everywhere. [ [PR #16](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/16) ]
-6. Used Ansible to automate server provisioning and to deploy the application’s Docker containers. [ [PR #28](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/files) ]
-7. Implemented GitHub Actions workflows for Unit, Integration, and E2E testing, as well as for automating deployment to test and production servers. [ [PR #35](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/files) ]
-8. Added Snyk and Gitleaks to our pipeline. Snyk finds security problems in our code's dependencies, and Gitleaks finds secret keys that might have accidentally been committed. [ [PR #69](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/69/files) ]
-9. Implemented branch-specific `workflow pipeline` to control the execution order of workflows. This ensures tests and deployment run in the correct sequence. [ [PR #49](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/49/files) ]
-10. Created a release process that automatically adds version tags, makes a list of changes (changelog), and sends a pull request to the `main` branch for new release deployment. [ [Commit ba766932](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/ba7669329b7037251841b4ccdc2c44f39d958f8a) ]
+1. Wrote Unit and Integration tests for the backend using pytest. We also wrote frontend tests using Jest.   [PR #3](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/3), [PR #11](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/11) 
+2. Used Playwright to build an automated end-to-end (E2E) testing suite. It checks the entire app on Chrome, Firefox, and Safari for features such as logging in, managing tasks, and categories.  [PR #23](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/23) 
+3. Set up Pylint and ESLint in our CI pipeline. These tools check our code for style problems and errors. [PR #12](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/12) 
+4. Cleaned up the codebase by centralizing configuration and removing hard-coded values and secrets. The app previously relied on multiple .env files with many hard-coded secrets and variables. We now use only one `.env` file and GitHub environment secrets & variables in our CI/CD pipeline, which has significantly improved security and maintainability.  [PR #26](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/files) 
+5. Used Docker and Docker Compose to package our database, backend, and frontend. This ensures the app runs consistently everywhere. [PR #16](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/16) 
+6. Used Ansible to automate server provisioning and to deploy the application’s Docker containers.  [PR #28](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/files) 
+7. Implemented GitHub Actions workflows for Unit, Integration, and E2E testing, as well as for automating deployment to test and production servers.  [PR #35](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/files) 
+8. Added Snyk and Gitleaks to our pipeline. Snyk finds security problems in our code's dependencies, and Gitleaks finds secret keys that might have accidentally been committed.  [PR #69](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/69/files) 
+9. Implemented branch-specific `workflow pipeline` to control the execution order of workflows. This ensures tests and deployment run in the correct sequence.  [PR #49](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/49/files) 
+10. Created a release process that automatically adds version tags, makes a list of changes (changelog), and sends a pull request to the `main` branch for new release deployment.  [Commit ba7669](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/ba7669329b7037251841b4ccdc2c44f39d958f8a) 
 11. Enabled GitHub branch protection rules to make sure all code is reviewed before merging.
 12. Configured the pipeline to save security reports as artifacts so we can check them later.
 
@@ -52,11 +52,11 @@ When we are ready for a new release, we create a PR from `dev` to `release`. Thi
 
 ##### Pre-Deployment Stage (PR merged to `release`)
 
-Once the PR is approved and merged into the `release` branch, a new workflow is executed that generates a changelog summarizing all pull requests since the previous release. It also automatically tags the merge commit with a new release tag following the project’s versioning scheme. A new PR is then automatically created by the GitHub bot in the main branch.
+Once the PR is approved and merged into the `release` branch, a new workflow is executed that generates a changelog summarizing all pull requests since the previous release. It also automatically tags the merge commit with a new release tag following the project’s versioning scheme. A new PR is then automatically created by the GitHub bot in the `main` branch.
 
 ##### Pre-Deployment Validation (PR from `release` to `main`)
 
-After the creation of an automated PR from release to the  main branch, all the tests are run for the final validation in the merged code. This includes unit tests, integration tests, followed by E2E tests and security tests. 
+After the creation of an automated PR from `release` to the  `main` branch, all the tests are run for the final validation in the merged code. This includes unit tests, integration tests, followed by E2E tests and security tests. 
 
 ##### Deploy to Production (PR merged to `main`)
 
@@ -65,7 +65,7 @@ When the final PR is merged into the `main` branch, the workflow builds the fina
 
 #### Use of Generative AI
 
-We mainly used ChatGPT throughout this project for debugging and getting examples. For instance, when we were working on tests, ChatGPT provided us with examples of how pytest, Jest, and Playwright work, as well as guidance on test case structure. It was very helpful for debugging errors in workflows we encountered. Generative AI was also used to findout hard-coded secrets in codebases and replace it with approcilate enviroment varibales.
+We mainly used ChatGPT throughout this project for debugging and getting examples. For instance, when we were working on tests, ChatGPT provided us with examples of how pytest, Jest, and Playwright work, as well as guidance on test case structure. It was very helpful for debugging errors in workflows we encountered. Generative AI was also used to find out hard-coded secrets in codebases and replace them with appropriate environment variables.
 
 #### Retrospective: What Worked
 
@@ -78,9 +78,10 @@ We mainly used ChatGPT throughout this project for debugging and getting example
 
 1. VCL only lets the person who provisioned the VM connect, and they must stay on the same Wi‑Fi/mobile network, or the firewall blocks SSH, so using VCL wasn’t an option.
 2. We didn't have sudo access on the VCL servers. This meant we couldn't use Ansible to install the system packages we needed.
-3. Only one person had access to the GitHub settings, for example, adding runners, adding GitHub secrets, and variables in the appropriate environment. This caused delays when we needed to change the settings, and that person wasn't available.
-4. A few of the Playwright tests were flaky, which took some time to debug.
-5. At first, our workflows didn’t run in a strict order, which caused some issues. For example, the deployment workflow could run before the test workflows, so a buggy version might get deployed, and then we notice some tests fail. It also created some unnecessary test calls. For example, when we noticed the unit tests failed, we should not proceed to intergration test as it is totally unnecessary.
+3. At first, our workflows didn’t run in a fixed order, which caused problems. Sometimes, deployment ran before tests, so buggy code got deployed, and we also ran unnecessary tests. For example, running integration tests even after unit tests had already failed
+4. Only one person had access to the GitHub settings, for example, adding runners, adding GitHub secrets, and variables in the appropriate environment. This caused delays when we needed to change the settings, and that person wasn't available.
+5. A few of the Playwright tests were flaky, which took some time to debug.
+
 
 #### Retrospective: What We Would Do Differently
 
@@ -93,7 +94,7 @@ We mainly used ChatGPT throughout this project for debugging and getting example
 
 Ahmed mainly focused on linting, testing, and the security workflow. He wrote unit and integration tests for the backend using pytest and for the frontend using Jest. He set up Playwright and wrote end-to-end tests for features like logging in, managing tasks, and the dashboard. He also fixed the code style issues in the backend and helped integrate the security scanning tools into the pipeline.
 
-Uchswas focused on writing configuration codes. It includes packaging the systems (frontend, backend, database) using Docker, and deploying the containers using Ansible, as well as provisioning servers on VCL and Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using a `branch-specific workflow pipeline`. 
+Uchswas focused on writing configuration codes. It includes packaging the systems (frontend, backend, database) using Docker, deploying the containers using Ansible and provisioning servers on VCL and Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using branch-specific workflow pipelines. He also worked on **refactoring** codebase for management and security purposes. 
 
 #### Security Extra Credit
 
