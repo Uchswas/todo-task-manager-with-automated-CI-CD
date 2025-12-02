@@ -2,9 +2,88 @@
 - Ahmed Elgendy - aelgend
 - Uchswas Paul - upaul 
 
-# Todo Task Manager
+## Todo Task Manager
 
 A modern, full-stack todo application built with React and Flask, featuring user authentication, task management, and categories.
+
+## Project Structure
+
+
+#### Backend 
+
+- **Code**: `task-manager/backend/app/` - Flask application with routes, models, and utilities
+- **Unit Tests**: `task-manager/backend/tests/unit/` - Unit tests for individual components and functions
+- **Integration Tests**: `task-manager/backend/tests/integration/` - Integration tests for API endpoints and database interactions
+
+
+#### Frontend
+
+- **Code**: `task-manager/frontend/src/` - React application with components, pages, hooks, and utilities
+- **Unit Tests**: `task-manager/frontend/src/tests/unit/` - Unit tests for React components and hooks
+- **Integration Tests**: `task-manager/frontend/src/tests/integration/` - Integration tests for page components and user flows
+- **E2E Tests**: `task-manager/frontend/src/tests/e2e/` - End-to-end tests using Playwright
+
+
+#### Docker Configuration
+
+- **Docker Compose**: `task-manager/docker-compose.yaml` - Orchestrates database, backend, and frontend services
+- **Backend Dockerfile**: `task-manager/backend/Dockerfile` - Container image configuration for Flask backend
+- **Frontend Dockerfile**: `task-manager/frontend/Dockerfile` - Container image configuration for React frontend
+
+#### Ansible Deployment Code
+
+- **Deployment Playbook**: `ansible/deploy.yml` - Main Ansible playbook for server deployment
+- **Host Configuration**: `ansible/host.yaml` - Inventory file defining target servers
+
+#### CI/CD Workflows
+
+**Location**: `.github/workflows/`
+
+#### Orchestrator Pipelines 
+
+- **Feature Branch Pipeline**: `.github/workflows/feature-branch-pipeline.yml`
+  - Triggers: Push/PR to feature branches
+  - Runs: Linting + Unit Tests + Security Scan
+
+- **Dev Branch Pipeline**: `.github/workflows/dev-branch-pipeline.yml`
+  - Triggers: PR to dev branch (tests on PR create, deploy on merge)
+  - Runs: Linting + Unit Tests + Integration Tests + Security Scan → Deploy on merge
+
+- **Release Branch Pipeline**: `.github/workflows/release-branch-pipeline.yml`
+  - Triggers: PR to release branch (tests on PR create, changelog on merge)
+  - Runs: Linting + Unit Tests + Integration Tests + E2E Tests + Security Scan → Generate Changelog on merge
+
+- **Main Branch Pipeline**: `.github/workflows/main-branch-pipeline.yml`
+  - Triggers: PR to main branch (tests on PR create, deploy on merge)
+  - Runs: Linting + Unit Tests + Integration Tests + E2E Tests + Security Scan → Deploy on merge
+
+#### Reusable Workflows (Called by Pipelines)
+
+- **Linting**:
+  - `.github/workflows/python-lint.yaml` - Python/Pylint checks
+  - `.github/workflows/es-lint.yaml` - JavaScript/ESLint checks
+
+- **Unit Tests**:
+  - `.github/workflows/backend-unit-tests.yml` - Backend unit tests
+  - `.github/workflows/frontend-unit-tests.yml` - Frontend unit tests
+
+- **Integration Tests**:
+  - `.github/workflows/backend-integration-tests.yml` - Backend integration tests
+  - `.github/workflows/frontend-integration-tests.yml` - Frontend integration tests
+
+- **E2E Tests**:
+  - `.github/workflows/e2e-tests.yml` - End-to-end tests with Playwright
+
+- **Security**:
+  - `.github/workflows/security-check.yml` - Security vulnerability scanning
+
+- **Deployment**:
+  - `.github/workflows/development-deploy.yml` - Deploy to development environment
+  - `.github/workflows/production-deploy.yml` - Deploy to production environment
+  - `.github/workflows/generate-changelog.yml` - Generate changelog, create GitHub release and create automatic PR to main
+
+
+
 
 ## Quick Start
 
@@ -14,67 +93,54 @@ Follow these steps in order; every command is expected to run from inside the ta
 
 Ensure the following are available on your machine:
 
-- Python **3.11+** with `python3`, `pip`, and `venv`
-- Node.js **18+** with `npm`
-- PostgreSQL **15+** (server + `psql` CLI)
-- Git
+- Docker
+- Ansible
 
-Example installation commands:
 
-- **Ubuntu/Debian**
-  ```bash
-  sudo apt update
-  sudo apt install -y python3 python3-venv python3-pip nodejs npm postgresql postgresql-contrib git
-  ```
 
-> Make sure the PostgreSQL service is running. On Linux you can use `sudo service postgresql start`.
+### 2. Clone the Repository and Configuration
 
-### 2. Clone the Repository
+- **Clone the Repository**:
+    ```bash
+    git clone https://github.ncsu.edu/aelgend/csc519-task-manager.git
+    cd csc519-task-manager/task-manager
+    ```
 
-```bash
-git clone https://github.ncsu.edu/aelgend/csc519-task-manager.git
-cd csc519-task-manager/task-manager
-```
+- **Copy the example environment file**:
+    ```bash
+    cp .env.example .env
+    ```
 
-### 3. Bootstrap the Project
+- **Edit `.env`** and fill in the configuration values
 
-Run the automated bootstrap script (requires sudo so it can create PostgreSQL users/databases):
 
-```bash
-sudo ./scripts/bootstrap.sh --api-url http://localhost:5000 --frontend-url http://localhost:3000
-```
+### 3. Run the Project
 
-The script will:
-- Recreate `backend/venv` and install `requirements.txt`
-- Install all frontend dependencies (`npm install`)
-- Install Playwright browsers and system dependencies
-- Drop and recreate the dev/test databases and roles
-- Generate fresh secrets and write `backend/.env`, `frontend/.env`, and Playwright env hints
-- Initialize the development database schema so the API is ready immediately
+You can run the application using either Docker Compose or Ansible deployment:
 
-If you need to target a remote host, override defaults with `--api-url`, `--frontend-url`, and `--playwright-url`.
+- #### Option A: Using Docker Compose (Recommended for Local Development)
 
-### 4. Start the Application
+    ```bash
+    docker compose up
+    ```
 
-Open two terminals:
 
-1. **Backend API**
-   ```bash
-   cd backend
-   source venv/bin/activate
-   python run.py
-   ```
-   - API base URL: http://localhost:5000
-   - Health checks: http://localhost:5000/health and http://localhost:5000/health/detailed
+    The application will be available at:
+    - **Frontend**: http://localhost:3000
+    - **Backend API**: http://localhost:5000
 
-2. **Frontend**
-   ```bash
-   cd frontend
-   npm start
-   ```
-   - Web app: http://localhost:3000
+- #### Option B: Using Ansible (For Remote Deployment)
 
-### 5. Linting & Testing
+    ```bash
+    cd ../ansible
+    ansible-playbook -i host.yaml deploy.yml
+    ```
+
+> **Note**: Ensure SSH key-based authentication is configured for passwordless login to the target server.
+
+
+
+### 4. Linting & Testing
 
 #### Backend
 
