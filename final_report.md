@@ -1,4 +1,4 @@
-### DevOps Pipeline Final Report
+### DevOps Project Final Report
 
 #### Group Members
 1. Ahmed Elgendy - aelgend
