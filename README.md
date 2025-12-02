@@ -9,14 +9,14 @@ A modern, full-stack todo application built with React and Flask, featuring user
 ## Project Structure
 
 
-#### Backend 
+### Backend 
 
 - **Code**: `task-manager/backend/app/` - Flask application with routes, models, and utilities
 - **Unit Tests**: `task-manager/backend/tests/unit/` - Unit tests for individual components and functions
 - **Integration Tests**: `task-manager/backend/tests/integration/` - Integration tests for API endpoints and database interactions
 
 
-#### Frontend
+### Frontend
 
 - **Code**: `task-manager/frontend/src/` - React application with components, pages, hooks, and utilities
 - **Unit Tests**: `task-manager/frontend/src/tests/unit/` - Unit tests for React components and hooks
@@ -24,18 +24,18 @@ A modern, full-stack todo application built with React and Flask, featuring user
 - **E2E Tests**: `task-manager/frontend/src/tests/e2e/` - End-to-end tests using Playwright
 
 
-#### Docker Configuration
+### Docker Configuration
 
 - **Docker Compose**: `task-manager/docker-compose.yaml` - Orchestrates database, backend, and frontend services
 - **Backend Dockerfile**: `task-manager/backend/Dockerfile` - Container image configuration for Flask backend
 - **Frontend Dockerfile**: `task-manager/frontend/Dockerfile` - Container image configuration for React frontend
 
-#### Ansible Deployment Code
+### Ansible Deployment Code
 
 - **Deployment Playbook**: `ansible/deploy.yml` - Main Ansible playbook for server deployment
 - **Host Configuration**: `ansible/host.yaml` - Inventory file defining target servers
 
-#### CI/CD Workflows
+### CI/CD Workflows
 
 **Location**: `.github/workflows/`
 
