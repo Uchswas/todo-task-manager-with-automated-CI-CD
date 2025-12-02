@@ -27,7 +27,7 @@ The CD part of our pipeline extends automation to the application's delivery and
 6. Used Ansible to automate server provisioning and to deploy the application’s Docker containers.  [PR #28](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/files) 
 7. Implemented GitHub Actions workflows for unit, integration, and E2E testing, as well as for automating deployment to test and production servers.  [PR #35](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/files) 
 8. Added Snyk and Gitleaks to our pipeline. Snyk finds security problems in our code's dependencies, and Gitleaks finds secret keys that might have accidentally been committed.  [PR #69](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/69/files) 
-9. Implemented branch-specific workflow pipeline to control the execution order of workflows. This ensures tests and deployment run in the correct sequence.  [PR #49](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/49/files) 
+9. Implemented branch-specific workflow pipeline to control the execution order of workflows. This ensures tests and deployment run in the correct sequence.  [PR #51](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/51/files) 
 10. Created a release process that automatically adds version tags, makes a list of changes (changelog), and sends a pull request to the `main` branch for new release deployment.  [Commit ba7669](https://github.ncsu.edu/aelgend/csc519-task-manager/commit/ba7669329b7037251841b4ccdc2c44f39d958f8a) 
 11. Enabled GitHub branch protection rules (`dev`, `release`, `main`) to make sure all code is reviewed before merging.
 12. Configured the pipeline to save security reports as artifacts on GitHub so we can check them later.
@@ -115,5 +115,5 @@ We mainly used ChatGPT throughout this project for debugging, understanding how 
 
 **Uchswas**
 1. Dockerized Setup & Ansible Deployment ([commit fc1e80f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/16/commits/fc1e80f241f5ff37d6c733c41d20ecbe2c003006), [commit beac25f](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/28/commits/beac25f54a06f53726d66692e61b5724f8f02f41))
-2. GitHub Workflows & Workflow Pipeline ([commit 6dcd152](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/49/commits/6dcd152af3f364f4f734456e5b779f30c4b3dcc0), [commit e2d9118](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/commits/e2d911874ec871e500ef9bac765045d540480f23))
+2. GitHub Workflows & Workflow Pipeline ([commit 6dcd152](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/51/commits/6dcd152af3f364f4f734456e5b779f30c4b3dcc0), [commit e2d9118](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/35/commits/e2d911874ec871e500ef9bac765045d540480f23))
 3. Code Cleaning and Hard-Coded Secrets & Variables Removal ([commit 18942a4](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/18942a47ae0ae412461e879fdfd742bc5e20502a), [commit c6e81d6](https://github.ncsu.edu/aelgend/csc519-task-manager/pull/26/commits/c6e81d60652a8420e8f8db61a81376835e8ffc4a))
