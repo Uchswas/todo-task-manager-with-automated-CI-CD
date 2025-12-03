@@ -83,6 +83,17 @@ A modern, full-stack todo application built with React and Flask, featuring user
   - `.github/workflows/generate-changelog.yml` - Generate changelog, create GitHub release and create automatic PR to main
 
 
+## Contributions and Technical Depth
+
+**Ahmed** mainly focused on linting, testing, and the security workflow. He wrote unit and integration tests for the backend using pytest and for the frontend using Jest. He set up Playwright and wrote end-to-end tests for features like logging in, managing tasks, and the dashboard. He also fixed the code style issues in the backend and helped integrate the security scanning tools into the pipeline.
+
+**Uchswas** focused on writing configuration code. It includes packaging the systems (frontend, backend, database) using Docker, deploying the containers using Ansible and provisioning servers on Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using branch-specific workflow pipelines. He also worked on refactoring codebase for management and security purposes. 
+
+## Security Extra Credit
+
+**Ahmed** set up the automated security scanning in the CI/CD pipeline which incorporates 2 security features, dependency vulnerability checking and secret leakage checking (`.github/workflows/security-check.yml`). (1) Snyk checks for security issues in the project's dependencies. Snyk scans both the Python backend and JavaScript frontend code for known vulnerabilities. (2) Gitleaks finds any secret keys or passwords that might have accidentally been committed to the code's history. Gitleaks helps catch these before they become a bigger problem. All the results from these security scans are saved and uploaded to GitHub as artifacts.
+
+**Uchswas** (1) cleaned up the codebase to handle configuration and secrets. Before, it used multiple .env files for different parts of the system (frontend, backend, database), which was hard to manage and could easily lead to inconsistencies and security issues. (2) Moreover, there were lots of hard-coded secrets and variables that were removed from the code and switched to using environment-based configuration instead. (3) He then moved sensitive values and some non-sensitive ones, such as HOST_IP_ADDRESS, into GitHub environment secrets and variables. It makes the setup more secure and less exposed.
 
 
 ## Quick Start
