@@ -17,7 +17,7 @@ As a result, we needed a solution that makes our integration and delivery operat
 The CD part of our pipeline extends automation to the application's delivery and environment management. Once the CI pipeline completes successfully and code is merged to either the `dev` or `main` branch, Ansible playbooks automatically build and deploy the application to the proper environment. We use Docker images and containers to maintain consistency across environments and eliminate configuration inconsistencies. All of this is done while keeping security in mind: we store sensitive secrets and credentials using the GitHub Secret Manager. We also have a stage in the workflow that scans the code for leaking secrets and scans both our frontend and backend dependencies for high-risk vulnerabilities. Using this workflow, our pipeline enables faster, more secure, and more reliable releases of our application with minimal manual effort.
 
 
-#### Technical Approach: Updated Pipeline Figure
+#### Technical Approach: Pipeline Figure
 
 ![pipeline](https://github.ncsu.edu/aelgend/csc519-task-manager/blob/main/pipeline.svg)
 
