@@ -48,6 +48,9 @@ jobs:
 
   generate-changelog:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ./.github/workflows/generate-changelog.yml
     secrets: inherit
 
