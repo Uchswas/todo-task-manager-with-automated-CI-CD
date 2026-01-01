@@ -1,6 +1,3 @@
-### Group Members
-- Ahmed Elgendy - aelgend
-- Uchswas Paul - upaul 
 
 ## Todo Task Manager
 
@@ -85,9 +82,11 @@ A modern, full-stack todo application built with React and Flask, featuring user
 
 ## Contributions and Technical Depth
 
+**Uchswas** focused on writing configuration code. It includes packaging the systems (frontend, backend, database) using Docker, deploying the containers using Ansible and provisioning servers on Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using branch-specific workflow pipelines. He also worked on refactoring codebase for management and security purposes. 
+
 **Ahmed** mainly focused on linting, testing, and the security workflow. He wrote unit and integration tests for the backend using pytest and for the frontend using Jest. He set up Playwright and wrote end-to-end tests for features like logging in, managing tasks, and the dashboard. He also fixed the code style issues in the backend and helped integrate the security scanning tools into the pipeline.
 
-**Uchswas** focused on writing configuration code. It includes packaging the systems (frontend, backend, database) using Docker, deploying the containers using Ansible and provisioning servers on Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using branch-specific workflow pipelines. He also worked on refactoring codebase for management and security purposes. 
+
 
 ## Security Extra Credit
 
