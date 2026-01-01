@@ -194,10 +194,33 @@
         chdir: "{{ app_dir }}/task-manager"
       ignore_errors: yes
 
-    - name: Clean Docker build cache (fix BuildKit cache corruption)
+    - name: Clean up Docker resources to free disk space
       shell: |
+        # Remove all stopped containers
+        docker container prune -f || true
+        # Remove all unused images (not just dangling)
+        docker image prune -af || true
+        # Remove all unused volumes
+        docker volume prune -f || true
+        # Remove all unused networks
+        docker network prune -f || true
+        # Clean build cache
         docker builder prune -af || true
+        # System-wide cleanup (removes everything not in use)
+        docker system prune -af --volumes || true
       ignore_errors: yes
+      tags:
+        - deploy
+
+    - name: Check available disk space
+      shell: df -h /
+      register: disk_usage
+      tags:
+        - deploy
+
+    - name: Display disk usage
+      debug:
+        var: disk_usage.stdout_lines
       tags:
         - deploy
 

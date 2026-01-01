@@ -16,9 +16,10 @@ class Config:
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable is required")
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    # Allow TEST_DATABASE_URL as fallback for testing scenarios
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or os.environ.get('TEST_DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("DATABASE_URL environment variable is required")
+        raise ValueError("DATABASE_URL or TEST_DATABASE_URL environment variable is required")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() == 'true'

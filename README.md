@@ -1,28 +1,24 @@
-### Group Members
-- Ahmed Elgendy - aelgend
-- Uchswas Paul - upaul 
 
-## Todo Task Manager
+## Todo Task Manager with CI/CD Pipeline
 
-A modern, full-stack todo application built with React and Flask, featuring user authentication, task management, and categories.
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
+
+This project showcases a comprehensive CI/CD implementation built on **GitHub Actions** that automates the software delivery lifecycle from code commit to production deployment. The pipeline leverages **Docker** and **Docker Compose** for containerization, **Ansible** playbooks for infrastructure provisioning and deployment on **Google Cloud Platform**, and comprehensive testing strategies including unit tests (**pytest**, **Jest**), integration tests, and end-to-end tests (**Playwright**). Code quality is enforced through automated linting (**Pylint**, **ESLint**), while security is maintained through continuous scanning with **Snyk** for dependency vulnerabilities and **Gitleaks** for secret detection. 
+
+The pipeline implements branch-specific workflows that trigger different stages based on the target branch. Feature branches run basic validation, development branches include integration testing and deployment, release branches add end-to-end testing, and main branch merges trigger production deployments. All sensitive configuration is managed through **GitHub Secrets and environment variables**, with code changes requiring peer review through GitHub's **branch protection rules**.
+
+![pipeline](https://github.ncsu.edu/aelgend/csc519-task-manager/blob/main/pipeline.svg)
+
+> **Note**: Detailed CI/CD design and documentation can be found in [`final_report.md`](final_report.md).
 
 ## Project Structure
-
-
-### Backend 
-
-- **Code**: `task-manager/backend/app/` - Flask application with routes, models, and utilities
-- **Unit Tests**: `task-manager/backend/tests/unit/` - Unit tests for individual components and functions
-- **Integration Tests**: `task-manager/backend/tests/integration/` - Integration tests for API endpoints and database interactions
-
-
-### Frontend
-
-- **Code**: `task-manager/frontend/src/` - React application with components, pages, hooks, and utilities
-- **Unit Tests**: `task-manager/frontend/src/tests/unit/` - Unit tests for React components and hooks
-- **Integration Tests**: `task-manager/frontend/src/tests/integration/` - Integration tests for page components and user flows
-- **E2E Tests**: `task-manager/frontend/src/tests/e2e/` - End-to-end tests using Playwright
-
 
 ### Docker Configuration
 
@@ -36,8 +32,6 @@ A modern, full-stack todo application built with React and Flask, featuring user
 - **Host Configuration**: `ansible/host.yaml` - Inventory file defining target servers
 
 ### CI/CD Workflows
-
-**Location**: `.github/workflows/`
 
 #### Orchestrator Pipelines 
 
@@ -82,23 +76,43 @@ A modern, full-stack todo application built with React and Flask, featuring user
   - `.github/workflows/production-deploy.yml` - Deploy to production environment
   - `.github/workflows/generate-changelog.yml` - Generate changelog, create GitHub release and create automatic PR to main
 
+### Backend 
 
-## Contributions and Technical Depth
+- **Code**: `task-manager/backend/app/` - Flask application with routes, models, and utilities
+- **Unit Tests**: `task-manager/backend/tests/unit/` - Unit tests for individual components and functions
+- **Integration Tests**: `task-manager/backend/tests/integration/` - Integration tests for API endpoints and database interactions
 
-**Ahmed** mainly focused on linting, testing, and the security workflow. He wrote unit and integration tests for the backend using pytest and for the frontend using Jest. He set up Playwright and wrote end-to-end tests for features like logging in, managing tasks, and the dashboard. He also fixed the code style issues in the backend and helped integrate the security scanning tools into the pipeline.
+### Frontend
 
-**Uchswas** focused on writing configuration code. It includes packaging the systems (frontend, backend, database) using Docker, deploying the containers using Ansible and provisioning servers on Google Cloud. After that, he focused on implementing the CI/CD pipeline. That includes writing workflows to trigger tests and deployment, as well as ordering workflow execution using branch-specific workflow pipelines. He also worked on refactoring codebase for management and security purposes. 
+- **Code**: `task-manager/frontend/src/` - React application with components, pages, hooks, and utilities
+- **Unit Tests**: `task-manager/frontend/src/tests/unit/` - Unit tests for React components and hooks
+- **Integration Tests**: `task-manager/frontend/src/tests/integration/` - Integration tests for page components and user flows
+- **E2E Tests**: `task-manager/frontend/src/tests/e2e/` - End-to-end tests using Playwright
 
-## Security Extra Credit
 
-**Ahmed** set up the automated security scanning in the CI/CD pipeline which incorporates 2 security features, dependency vulnerability checking and secret leakage checking (`.github/workflows/security-check.yml`). (1) Snyk checks for security issues in the project's dependencies. Snyk scans both the Python backend and JavaScript frontend code for known vulnerabilities. (2) Gitleaks finds any secret keys or passwords that might have accidentally been committed to the code's history. Gitleaks helps catch these before they become a bigger problem. All the results from these security scans are saved and uploaded to GitHub as artifacts.
 
-**Uchswas** (1) cleaned up the codebase to handle configuration and secrets. Before, it used multiple .env files for different parts of the system (frontend, backend, database), which was hard to manage and could easily lead to inconsistencies and security issues. (2) Moreover, there were lots of hard-coded secrets and variables that were removed from the code and switched to using environment-based configuration instead. (3) He then moved sensitive values and some non-sensitive ones, such as HOST_IP_ADDRESS, into GitHub environment secrets and variables. It makes the setup more secure and less exposed.
 
+
+## Setting Up Runner Access to Google Cloud
+
+To enable the GitHub Actions runner to deploy to Google Cloud VMs, you need to configure SSH access. Follow the steps to enable this:
+
+1. On the runner, generate a new key pair: `ssh-keygen -t rsa -b 4096 -f ~/.ssh/gcp_key`
+2. Copy your public key: `cat ~/.ssh/gcp_key.pub`
+3. Add the public key to your GCP VM instance metadata:
+   - **Google Cloud Console** → **Compute Engine** → **VM instances**
+   - Click your VM name → **Edit**
+   - Find **SSH Keys** section → **Add item**
+   - Paste the public key in the format: `KEY_VALUE USERNAME` (e.g., `ssh-ed25519 AAAAC3... upaul`)
+   - Click **Save**
+
+## GitHub Configuration Setup
+
+The CI/CD pipeline requires GitHub **environment variables** (`CORS_ORIGINS`, `FLASK_APP`, `FLASK_ENV`, `REACT_APP_API_URL`, `SQLALCHEMY_ECHO`, `SSH_HOST`, `SSH_USER`, `TASKS_PER_PAGE`) to be configured for each environment (development and production) under **Settings** → **Environments** → **[environment name]** → **Variables**.
+
+The pipeline also requires **environment secrets** (`JWT_SECRET`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_TEST_DB`, `POSTGRES_TEST_USER`, `POSTGRES_TEST_PASSWORD`, `SECRET_KEY`, `SSH_PRIVATE_KEY`) to be configured under **Settings** → **Environments** → **[environment name]** → **Secrets**.
 
 ## Quick Start
-
-Follow these steps in order; every command is expected to run from inside the task-manager directory unless noted otherwise.
 
 ### 1. Install System Prerequisites
 
@@ -106,8 +120,6 @@ Ensure the following are available on your machine:
 
 - Docker
 - Ansible
-
-
 
 ### 2. Clone the Repository and Configuration
 
@@ -124,7 +136,6 @@ Ensure the following are available on your machine:
 
 - **Edit `.env`** and fill in the configuration values
 
-
 ### 3. Run the Project
 
 You can run the application using either Docker Compose or Ansible deployment:
@@ -134,7 +145,6 @@ You can run the application using either Docker Compose or Ansible deployment:
     ```bash
     docker compose up
     ```
-
 
     The application will be available at:
     - **Frontend**: http://localhost:3000
@@ -150,92 +160,3 @@ You can run the application using either Docker Compose or Ansible deployment:
 > **Note**: Ensure SSH key-based authentication is configured for passwordless login to the target server.
 
 
-
-### 4. Linting & Testing
-
-#### Backend
-
-- Activate the virtual environment:
-  ```bash
-  cd backend
-  source venv/bin/activate
-  ```
-- Lint the codebase:
-  ```bash
-  pylint app/ tests/
-  ```
-- Run all tests:
-  ```bash
-  pytest
-  ```
-- To focus on a subset:
-  ```bash
-  pytest tests/unit
-  pytest tests/integration
-  ```
-
-#### Frontend
-
-- Lint the codebase:
-  ```bash
-  npm run lint
-  ```
-- Run tests:
-  ```bash
-  cd frontend
-  npm run test:unit
-  npm run test:integration
-  npm run test:e2e
-  ```
-
-### API Endpoints
-
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
-
-#### Tasks
-- `GET /api/tasks` - Get user tasks (with filtering)
-- `POST /api/tasks` - Create new task
-- `GET /api/tasks/:id` - Get specific task
-- `PUT /api/tasks/:id` - Update task
-- `DELETE /api/tasks/:id` - Delete task
-
-#### Categories
-- `GET /api/categories` - Get user categories
-- `POST /api/categories` - Create new category
-- `PUT /api/categories/:id` - Update category
-- `DELETE /api/categories/:id` - Delete category
-
-#### Statistics
-- `GET /api/stats` - Get user task statistics
-
-### Database Schema
-
-#### Users
-- id (Primary Key)
-- email (Unique)
-- name
-- password_hash
-- created_at, updated_at
-
-#### Categories
-- id (Primary Key)
-- name
-- color
-- user_id (Foreign Key)
-- created_at, updated_at
-
-#### Tasks
-- id (Primary Key)
-- title
-- description
-- completed
-- priority (high, medium, low)
-- due_date
-- user_id (Foreign Key)
-- category_id (Foreign Key)
-- created_at, updated_at
