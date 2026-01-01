@@ -6,6 +6,7 @@ A modern, full-stack todo application built with React and Flask, featuring user
 ## Project Structure
 
 
+
 ### Backend 
 
 - **Code**: `task-manager/backend/app/` - Flask application with routes, models, and utilities
