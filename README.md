@@ -1,6 +1,15 @@
 
 ## Todo Task Manager with CI/CD Pipeline
 
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
+
 This project showcases a comprehensive CI/CD implementation built on **GitHub Actions** that automates the software delivery lifecycle from code commit to production deployment. The pipeline leverages **Docker** and **Docker Compose** for containerization, **Ansible** playbooks for infrastructure provisioning and deployment on **Google Cloud Platform**, and comprehensive testing strategies including unit tests (**pytest**, **Jest**), integration tests, and end-to-end tests (**Playwright**). Code quality is enforced through automated linting (**Pylint**, **ESLint**), while security is maintained through continuous scanning with **Snyk** for dependency vulnerabilities and **Gitleaks** for secret detection. 
 
 The pipeline implements branch-specific workflows that trigger different stages based on the target branch. Feature branches run basic validation, development branches include integration testing and deployment, release branches add end-to-end testing, and main branch merges trigger production deployments. All sensitive configuration is managed through **GitHub Secrets and environment variables**, with code changes requiring peer review through GitHub's **branch protection rules**.
