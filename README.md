@@ -14,6 +14,8 @@ This project showcases a comprehensive CI/CD implementation built on **GitHub Ac
 
 The pipeline implements branch-specific workflows that trigger different stages based on the target branch. Feature branches run basic validation, development branches include integration testing and deployment, release branches add end-to-end testing, and main branch merges trigger production deployments. All sensitive configuration is managed through **GitHub Secrets and environment variables**, with code changes requiring peer review through GitHub's **branch protection rules**.
 
+![pipeline](https://github.ncsu.edu/aelgend/csc519-task-manager/blob/main/pipeline.svg)
+
 > **Note**: Detailed CI/CD design and documentation can be found in [`final_report.md`](final_report.md).
 
 ## Project Structure
