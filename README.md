@@ -1,164 +1,162 @@
-### Group Members
-- Ahmed Elgendy - aelgend
-- Uchswas Paul - upaul 
 
-# Todo Task Manager
+## Todo Task Manager with CI/CD Pipeline
 
-A modern, full-stack todo application built with React and Flask, featuring user authentication, task management, and categories.
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
+
+This project showcases a comprehensive CI/CD implementation built on **GitHub Actions** that automates the software delivery lifecycle from code commit to production deployment. The pipeline leverages **Docker** and **Docker Compose** for containerization, **Ansible** playbooks for infrastructure provisioning and deployment on **Google Cloud Platform**, and comprehensive testing strategies including unit tests (**pytest**, **Jest**), integration tests, and end-to-end tests (**Playwright**). Code quality is enforced through automated linting (**Pylint**, **ESLint**), while security is maintained through continuous scanning with **Snyk** for dependency vulnerabilities and **Gitleaks** for secret detection. 
+
+The pipeline implements branch-specific workflows that trigger different stages based on the target branch. Feature branches run basic validation, development branches include integration testing and deployment, release branches add end-to-end testing, and main branch merges trigger production deployments. All sensitive configuration is managed through **GitHub Secrets and environment variables**, with code changes requiring peer review through GitHub's **branch protection rules**.
+
+![pipeline](https://github.ncsu.edu/aelgend/csc519-task-manager/blob/main/pipeline.svg)
+
+> **Note**: Detailed CI/CD design and documentation can be found in [`final_report.md`](final_report.md).
+
+## Project Structure
+
+### Docker Configuration
+
+- **Docker Compose**: `task-manager/docker-compose.yaml` - Orchestrates database, backend, and frontend services
+- **Backend Dockerfile**: `task-manager/backend/Dockerfile` - Container image configuration for Flask backend
+- **Frontend Dockerfile**: `task-manager/frontend/Dockerfile` - Container image configuration for React frontend
+
+### Ansible Deployment Code
+
+- **Deployment Playbook**: `ansible/deploy.yml` - Main Ansible playbook for server deployment
+- **Host Configuration**: `ansible/host.yaml` - Inventory file defining target servers
+
+### CI/CD Workflows
+
+#### Orchestrator Pipelines 
+
+- **Feature Branch Pipeline**: `.github/workflows/feature-branch-pipeline.yml`
+  - Triggers: Push/PR to feature branches
+  - Runs: Linting + Unit Tests + Security Scan
+
+- **Dev Branch Pipeline**: `.github/workflows/dev-branch-pipeline.yml`
+  - Triggers: PR to dev branch (tests on PR create, deploy on merge)
+  - Runs: Linting + Unit Tests + Integration Tests + Security Scan → Deploy on merge
+
+- **Release Branch Pipeline**: `.github/workflows/release-branch-pipeline.yml`
+  - Triggers: PR to release branch (tests on PR create, changelog on merge)
+  - Runs: Linting + Unit Tests + Integration Tests + E2E Tests + Security Scan → Generate Changelog on merge
+
+- **Main Branch Pipeline**: `.github/workflows/main-branch-pipeline.yml`
+  - Triggers: PR to main branch (tests on PR create, deploy on merge)
+  - Runs: Linting + Unit Tests + Integration Tests + E2E Tests + Security Scan → Deploy on merge
+
+#### Reusable Workflows (Called by Pipelines)
+
+- **Linting**:
+  - `.github/workflows/python-lint.yaml` - Python/Pylint checks
+  - `.github/workflows/es-lint.yaml` - JavaScript/ESLint checks
+
+- **Unit Tests**:
+  - `.github/workflows/backend-unit-tests.yml` - Backend unit tests
+  - `.github/workflows/frontend-unit-tests.yml` - Frontend unit tests
+
+- **Integration Tests**:
+  - `.github/workflows/backend-integration-tests.yml` - Backend integration tests
+  - `.github/workflows/frontend-integration-tests.yml` - Frontend integration tests
+
+- **E2E Tests**:
+  - `.github/workflows/e2e-tests.yml` - End-to-end tests with Playwright
+
+- **Security**:
+  - `.github/workflows/security-check.yml` - Security vulnerability scanning
+
+- **Deployment**:
+  - `.github/workflows/development-deploy.yml` - Deploy to development environment
+  - `.github/workflows/production-deploy.yml` - Deploy to production environment
+  - `.github/workflows/generate-changelog.yml` - Generate changelog, create GitHub release and create automatic PR to main
+
+### Backend 
+
+- **Code**: `task-manager/backend/app/` - Flask application with routes, models, and utilities
+- **Unit Tests**: `task-manager/backend/tests/unit/` - Unit tests for individual components and functions
+- **Integration Tests**: `task-manager/backend/tests/integration/` - Integration tests for API endpoints and database interactions
+
+### Frontend
+
+- **Code**: `task-manager/frontend/src/` - React application with components, pages, hooks, and utilities
+- **Unit Tests**: `task-manager/frontend/src/tests/unit/` - Unit tests for React components and hooks
+- **Integration Tests**: `task-manager/frontend/src/tests/integration/` - Integration tests for page components and user flows
+- **E2E Tests**: `task-manager/frontend/src/tests/e2e/` - End-to-end tests using Playwright
+
+
+
+
+
+## Setting Up Runner Access to Google Cloud
+
+To enable the GitHub Actions runner to deploy to Google Cloud VMs, you need to configure SSH access. Follow the steps to enable this:
+
+1. On the runner, generate a new key pair: `ssh-keygen -t rsa -b 4096 -f ~/.ssh/gcp_key`
+2. Copy your public key: `cat ~/.ssh/gcp_key.pub`
+3. Add the public key to your GCP VM instance metadata:
+   - **Google Cloud Console** → **Compute Engine** → **VM instances**
+   - Click your VM name → **Edit**
+   - Find **SSH Keys** section → **Add item**
+   - Paste the public key in the format: `KEY_VALUE USERNAME` (e.g., `ssh-ed25519 AAAAC3... upaul`)
+   - Click **Save**
+
+## GitHub Configuration Setup
+
+The CI/CD pipeline requires GitHub **environment variables** (`CORS_ORIGINS`, `FLASK_APP`, `FLASK_ENV`, `REACT_APP_API_URL`, `SQLALCHEMY_ECHO`, `SSH_HOST`, `SSH_USER`, `TASKS_PER_PAGE`) to be configured for each environment (development and production) under **Settings** → **Environments** → **[environment name]** → **Variables**.
+
+The pipeline also requires **environment secrets** (`JWT_SECRET`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_TEST_DB`, `POSTGRES_TEST_USER`, `POSTGRES_TEST_PASSWORD`, `SECRET_KEY`, `SSH_PRIVATE_KEY`) to be configured under **Settings** → **Environments** → **[environment name]** → **Secrets**.
 
 ## Quick Start
-
-Follow these steps in order; every command is expected to run from inside the task-manager directory unless noted otherwise.
 
 ### 1. Install System Prerequisites
 
 Ensure the following are available on your machine:
 
-- Python **3.11+** with `python3`, `pip`, and `venv`
-- Node.js **18+** with `npm`
-- PostgreSQL **15+** (server + `psql` CLI)
-- Git
+- Docker
+- Ansible
 
-Example installation commands:
+### 2. Clone the Repository and Configuration
 
-- **Ubuntu/Debian**
-  ```bash
-  sudo apt update
-  sudo apt install -y python3 python3-venv python3-pip nodejs npm postgresql postgresql-contrib git
-  ```
+- **Clone the Repository**:
+    ```bash
+    git clone https://github.ncsu.edu/aelgend/csc519-task-manager.git
+    cd csc519-task-manager/task-manager
+    ```
 
-> Make sure the PostgreSQL service is running. On Linux you can use `sudo service postgresql start`.
+- **Copy the example environment file**:
+    ```bash
+    cp .env.example .env
+    ```
 
-### 2. Clone the Repository
+- **Edit `.env`** and fill in the configuration values
 
-```bash
-git clone https://github.ncsu.edu/aelgend/csc519-task-manager.git
-cd csc519-task-manager/task-manager
-```
+### 3. Run the Project
 
-### 3. Bootstrap the Project
+You can run the application using either Docker Compose or Ansible deployment:
 
-Run the automated bootstrap script (requires sudo so it can create PostgreSQL users/databases):
+- #### Option A: Using Docker Compose (Recommended for Local Development)
 
-```bash
-sudo ./scripts/bootstrap.sh --api-url http://localhost:5000 --frontend-url http://localhost:3000
-```
+    ```bash
+    docker compose up
+    ```
 
-The script will:
-- Recreate `backend/venv` and install `requirements.txt`
-- Install all frontend dependencies (`npm install`)
-- Install Playwright browsers and system dependencies
-- Drop and recreate the dev/test databases and roles
-- Generate fresh secrets and write `backend/.env`, `frontend/.env`, and Playwright env hints
-- Initialize the development database schema so the API is ready immediately
+    The application will be available at:
+    - **Frontend**: http://localhost:3000
+    - **Backend API**: http://localhost:5000
 
-If you need to target a remote host, override defaults with `--api-url`, `--frontend-url`, and `--playwright-url`.
+- #### Option B: Using Ansible (For Remote Deployment)
 
-### 4. Start the Application
+    ```bash
+    cd ../ansible
+    ansible-playbook -i host.yaml deploy.yml
+    ```
 
-Open two terminals:
+> **Note**: Ensure SSH key-based authentication is configured for passwordless login to the target server.
 
-1. **Backend API**
-   ```bash
-   cd backend
-   source venv/bin/activate
-   python run.py
-   ```
-   - API base URL: http://localhost:5000
-   - Health checks: http://localhost:5000/health and http://localhost:5000/health/detailed
 
-2. **Frontend**
-   ```bash
-   cd frontend
-   npm start
-   ```
-   - Web app: http://localhost:3000
-
-### 5. Linting & Testing
-
-#### Backend
-
-- Activate the virtual environment:
-  ```bash
-  cd backend
-  source venv/bin/activate
-  ```
-- Lint the codebase:
-  ```bash
-  pylint app/ tests/
-  ```
-- Run all tests:
-  ```bash
-  pytest
-  ```
-- To focus on a subset:
-  ```bash
-  pytest tests/unit
-  pytest tests/integration
-  ```
-
-#### Frontend
-
-- Lint the codebase:
-  ```bash
-  npm run lint
-  ```
-- Run tests:
-  ```bash
-  cd frontend
-  npm run test:unit
-  npm run test:integration
-  npm run test:e2e
-  ```
-
-### API Endpoints
-
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
-
-#### Tasks
-- `GET /api/tasks` - Get user tasks (with filtering)
-- `POST /api/tasks` - Create new task
-- `GET /api/tasks/:id` - Get specific task
-- `PUT /api/tasks/:id` - Update task
-- `DELETE /api/tasks/:id` - Delete task
-
-#### Categories
-- `GET /api/categories` - Get user categories
-- `POST /api/categories` - Create new category
-- `PUT /api/categories/:id` - Update category
-- `DELETE /api/categories/:id` - Delete category
-
-#### Statistics
-- `GET /api/stats` - Get user task statistics
-
-### Database Schema
-
-#### Users
-- id (Primary Key)
-- email (Unique)
-- name
-- password_hash
-- created_at, updated_at
-
-#### Categories
-- id (Primary Key)
-- name
-- color
-- user_id (Foreign Key)
-- created_at, updated_at
-
-#### Tasks
-- id (Primary Key)
-- title
-- description
-- completed
-- priority (high, medium, low)
-- due_date
-- user_id (Foreign Key)
-- category_id (Foreign Key)
-- created_at, updated_at
