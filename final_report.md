@@ -19,7 +19,7 @@ The CD part of our pipeline extends automation to the application's delivery and
 
 #### Technical Approach: Pipeline Figure
 
-![pipeline](https://github.ncsu.edu/aelgend/csc519-task-manager/blob/main/pipeline.svg)
+![pipeline](https://raw.githubusercontent.com/Uchswas/todo-task-manager-with-automated-CI-CD/main/pipeline.svg)
 
 #### Technical Approach: Description of Pipeline
 
